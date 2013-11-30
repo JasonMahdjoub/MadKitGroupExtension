@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Description: MadKitGroupExtension 1.0, an extension to MadKit 5 alpha 16 (the Multiagent Development Kit: An API f
+ or building Multiagent applications as artificial societies)
+Version: 1.0
+Author: Jason Mahdjoub
+Built-By: Jason Mahdjoub
+Main-Class: madkitgroupextension.kernel.MadkitGroupExtension
+Class-Path:lib/madkit-5.0.0.16.jar
+

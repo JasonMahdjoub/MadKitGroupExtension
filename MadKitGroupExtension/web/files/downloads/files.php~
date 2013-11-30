@@ -1,0 +1,353 @@
+<?php
+
+
+
+class VersionMadKit
+{
+	public $madkit_version;
+
+	public function __construct($madkit_version)
+	{
+		$this->madkit_version=$madkit_version;
+	}
+	public function getJSInstance()
+	{
+		return "new VersionMadKit(".$this->madkit_version.")";
+	}
+	public function __toString()
+	{
+		return $this->madkit_version;
+	}
+
+}
+class VersionType
+{
+	public $type_and_version;
+	public $madkit_versions=array();
+
+	public function __construct($type_and_version)
+	{
+		$this->type_and_version=$type_and_version;
+	}
+	public function add($madkit_version)
+	{
+		if (!array_key_exists($madkit_version, $this->madkit_versions))
+		{
+			$this->madkit_versions[$madkit_version]=new VersionMadKit($madkit_version);
+		}
+	}
+
+	public function getJSInstance()
+	{
+		$js="new VersionType(".$this->type_and_version.", new Array(";
+
+		$first=true;
+		foreach($this->madkit_versions as $mkv)
+		{
+			if ($first)
+				$first=false;
+			else
+				$js.=", ";
+			$js.=$mkv->getJSInstance();
+		}
+		$js.="))";
+		return $js;
+	}
+
+	public function __toString()
+	{
+		return $this->type_and_version;
+	}
+
+}
+class VersionRevision
+{
+	public $revision=0;
+	public $types=array();
+
+	public function __construct($revision)
+	{
+		$this->revision=$revision;
+	}
+
+	public function add($type, $madkit_version)
+	{
+		if (!array_key_exists($type, $this->types))
+		{
+			$this->types[$type]=new VersionType($type);
+		}
+		$this->types[$type]->add($madkit_version);
+	}
+
+	public function getJSInstance()
+	{
+		$js="new VersionRevision(".$this->revision.", new Array(";
+
+		$first=true;
+		foreach($this->types as $type)
+		{
+			if ($first)
+				$first=false;
+			else
+				$js.=", ";
+			$js.=$type->getJSInstance();
+		}
+		$js.="))";
+		return $js;
+	}
+	public function __toString()
+	{
+		return "".$this->revision;
+	}
+	public function doSort()
+	{
+		arsort($this->types, SORT_STRING);
+		foreach($this->types as $type)
+		{
+			$type->doSort();
+		}
+	}
+
+}
+
+class VersionMinor
+{
+	public $minor=0;
+	public $revisions=array();
+
+	public function __construct($minor)
+	{
+		$this->minor=$minor;
+	}
+	public function add($revision, $type, $madkit_version)
+	{
+		if (!array_key_exists($revision, $this->revisions))
+		{
+			$this->revisions[$revision]=new VersionRevision($revision);
+		}
+		$this->revisions[$revision]->add($type, $madkit_version);
+
+	}
+	public function getJSInstance()
+	{
+		$js="new VersionMinor(".$this->minor.", new Array(";
+
+		$first=true;
+		foreach($this->revisions as $revision)
+		{
+			if ($first)
+				$first=false;
+			else
+				$js.=", ";
+			$js.=$revision->getJSInstance();
+		}
+		$js.="))";
+		return $js;
+	}
+	public function __toString()
+	{
+		return "".$this->minor;
+	}
+	public function doSort()
+	{
+		arsort($this->revisions, SORT_STRING);
+		foreach($this->revisions as $revision)
+		{
+			$revision->doSort();
+		}
+	}
+
+
+}
+
+class VersionMajor
+{
+	public $major=0;
+	
+	public $minors=array();
+	
+	public function __construct($major)
+	{
+		$this->major=$major;
+	}
+
+	public function add($minor, $revision, $type, $madkit_version)
+	{
+		if (!array_key_exists($minor, $this->minors))
+		{
+			$this->minors[$minor]=new VersionMinor($minor);
+		}
+		$this->minors[$minor]->add($revision, $type, $madkit_version);
+	}
+
+	public function getJSInstance()
+	{
+		$js="new VersionMajor(".$this->major.", new Array(";
+
+		$first=true;
+		foreach($this->minors as $minor)
+		{
+			if ($first)
+				$first=false;
+			else
+				$js.=", ";
+			$js.=$minor->getJSInstance();
+		}
+		$js.="))";
+		return $js;
+	}
+	public function __toString()
+	{
+		return "".$this->major;
+	}
+	public function doSort()
+	{
+		arsort($this->minors, SORT_STRING);
+		foreach($this->minors as $minor)
+		{
+			$minor->doSort();
+		}
+	}
+
+
+}
+
+class Versions
+{
+	const downloads_dir="/downloads/";
+	public $majors=array();
+
+	public function __construct()
+	{
+	}
+
+	public function addFile($file)
+	{
+		$tab=array();
+		if (preg_match("/^mkge-([0-9]+)\.([0-9]+)\.([0-9]+)(Stable|(Alpha[0-9]+|Beta[0-9]+))\+madkit-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/", $file, $tab))
+		{
+			$major=$tab[1];
+			if (!array_key_exists($major, $this->majors))
+			{
+				$this->majors[$major]=new VersionMajor($major);
+			}
+			$this->majors[$major]->add($tab[2], $tab[3], $tab[4], $tab[5]);
+		}
+		else
+			throw new Exception("Invalid file: ".$file);
+		
+	}
+
+	public function getJSInstance()
+	{
+		$js="new Versions(new array(";
+		$first=true;
+		foreach ($this->majors as $major)
+		{
+			if ($first)
+				$first=false;
+			else
+				$js.=", ";
+			$js.=$this->majors->getJSInstance();
+		}
+		$js.="))";
+		return $js;
+	}
+
+	public function doSort()
+	{
+		arsort($this->majors, SORT_STRING);
+		foreach($this->majors as $major)
+		{
+			$major->doSort();
+		}
+	}
+	public static function getVersions()
+	{
+		$dirs=glob(Self::downloads_dir."*", GLOB_ONLYDIR);
+		$directories=array();
+		if (!is_set($dirs))
+			return $directories;
+		foreach($dirs as $dir)
+		{
+			if (preg_match("^mkge-", $dir))
+			{
+				$directories[]=$dir;
+			}
+		}
+	
+		$versions=new Versions();
+		foreach ($directories as $dir)
+		{
+			$files=glob(Self::downloads_dir.$dir."/WithMadKit/*.jar");
+			if (is_set($files))
+			{
+				foreach($files as $file)
+				{
+					$versions->addFile($file);
+				}
+			}
+		}
+		$revisions->doSort();
+		return $versions;
+	}
+
+
+}
+
+
+
+$versions=Versions::getVersions();
+
+echo <<<HTML
+<!DOCTYPE html PUBLIC "-//W3V//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Choose your version</title>
+		<script type="text/javascript" language="Javascript">
+HTML;
+echo <<<JS
+	function VersionMadKit(var mk_version)
+	{
+		var madkit_version=mk_version;
+	}
+	function VersionType(var vtype, var mk_versions)
+	{
+		var version_type=vtype;
+		var madkit_versions=mk_versions;
+	}
+	function VersionRevision(var vrevision, var vtypes)
+	{
+		var version_revision=vrevision;
+		var version_types=vtypes;
+	}
+	function VersionMinor(var vminor, var vrevisions)
+	{
+		var version_minor=vminor;
+		var version_revisions=vrevisions;
+	}
+	function VersionMajor(var vmajor, var vminors)
+	{
+		var version_major=vmajor;
+		var version_minors=vminors;
+	}
+	function Versions(var vmajors)
+	{
+		var version_majors=vmajors;
+	}
+	var versions={$versions->getJSInstance()};
+	
+JS;
+
+
+echo <<<HTML
+		</script>
+	</head>
+	<body>
+	</body>
+</html>
+HTML;
+
+?>
+

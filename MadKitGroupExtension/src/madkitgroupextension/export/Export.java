@@ -42,7 +42,7 @@ import madkitgroupextension.version.Version;
 
 public class Export
 {
-    private final static String MadKitPath="../MadKit/";
+    private final static String MadKitPath="../../../projets/MadKit/";
     private final static String ExportPathTmp=".export/";
     private final static String ExportPathFinal="export/";
     

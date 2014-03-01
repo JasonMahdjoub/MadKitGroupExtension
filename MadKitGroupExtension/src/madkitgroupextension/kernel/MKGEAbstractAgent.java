@@ -21,6 +21,7 @@
 
 package madkitgroupextension.kernel;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -29,6 +30,10 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 
 import javax.swing.JFrame;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import madkit.gui.OutputPanel;
 import madkit.gui.menu.AgentLogLevelMenu;
@@ -45,6 +50,7 @@ import madkit.kernel.AbstractAgent.ReturnCode;
 import madkit.kernel.AbstractAgent.State;
 import madkit.kernel.Madkit.Option;
 import madkit.message.EnumMessage;
+import madkit.util.XMLUtilities;
 
 
 /**
@@ -1499,4 +1505,36 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 */
 	public <E extends Enum<E>> boolean isMadkitPropertyTrue(E option);
 
+	/**
+	 * Gets the names of the roles that the agent has in
+	 * a specific group
+	 * 
+	 * @param _group
+	 * @return a sorted set containing the names of the roles
+	 * the agent has in a group, or <code>null</code> if the
+	 * community or the group does not exist. This set could be empty.
+	 */
+	public TreeSet<String> getMyMKGERoles(Group _group);
+	
+	/**
+	 * launch all the agents defined in an xml configuration file
+	 * 
+	 * @param xmlFile the XML file to parse
+	 * @return {@link ReturnCode#SEVERE} if the launch failed
+	 * @throws ParserConfigurationException 
+	 * @throws IOException 
+	 * @throws SAXException 
+	 */
+	public ReturnCode launchXmlAgents(String xmlFile) throws SAXException, IOException, ParserConfigurationException;
+	
+	/**
+	 * Launch agents by parsing an XML node. The method
+	 * immediately returns without waiting the end of the agents' activation, 
+	 * 
+	 * @param agentXmlNode the XML node
+	 * @return {@link ReturnCode#SEVERE} if the launch failed
+	 * 
+	 * @see XMLUtilities
+	 */
+	public ReturnCode launchNode(Node agentXmlNode);
 }

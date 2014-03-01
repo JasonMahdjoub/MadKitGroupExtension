@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2013, 10, 15);
-	VERSION=new Version("MadKitGroupExtension", 1,3,2, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2014, 01, 28);
+	VERSION=new Version("MadKitGroupExtension", 1,3,4, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -219,8 +219,21 @@ public class MadKitGroupExtension
 	
 
 	c=Calendar.getInstance();
+	c.set(2014, 01, 28);
+	Description d=new Description(1,3,4,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adaptation of the function 'launchNode(Node)' to MadKitGroupExtension");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
+	c.set(2014, 01, 26);
+	d=new Description(1,3,3,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Including MadKit 5.0.3.2");
+	d.addItem("Adding function AbstractAgent.getMyMKGERoles(Group)");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2013, 10, 15);
-	Description d=new Description(1,3,2,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,3,2,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Including MadKit 5.0.3.");
 	d.addItem("function Watcher.getProbes() is replaced by function Watcher.probes().");
 	d.addItem("Adding function AbstractAgent.hasRole(Group, String).");

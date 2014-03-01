@@ -35,17 +35,25 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.logging.Level;
 import java.util.TreeSet;
 
 import javax.swing.JFrame;
 
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import madkit.gui.OutputPanel;
 import madkit.i18n.ErrorMessages;
+import madkit.i18n.Words;
 import madkit.kernel.AgentAddress;
 import madkit.kernel.Gatekeeper;
 import madkit.kernel.KernelAddress;
 import madkit.kernel.MadkitClassLoader;
 import madkit.kernel.Message;
+import madkit.kernel.AbstractAgent.ReturnCode;
+import madkit.util.XMLUtilities;
 import madkitgroupextension.kernel.AbstractAgent;
 import madkitgroupextension.kernel.AbstractGroup;
 import madkitgroupextension.kernel.Group;
@@ -463,6 +471,25 @@ public abstract class SwingViewer extends madkit.simulation.viewer.SwingViewer i
 	    return res;
 	}
     
+	/**
+	 * replaced by {@link #getMyMKGERoles(Group)}
+	 */
+	@Deprecated @Override public final TreeSet<String> getMyRoles(final String community, final String group){
+	    return this.getMyMKGERoles(new Group(community, group));
+	}
+	
+	/**
+	 * Gets the names of the roles that the agent has in
+	 * a specific group
+	 * 
+	 * @param _group
+	 * @return a sorted set containing the names of the roles
+	 * the agent has in a group, or <code>null</code> if the
+	 * community or the group does not exist. This set could be empty.
+	 */
+	@Override public TreeSet<String> getMyMKGERoles(Group _group){
+		return super.getMyRoles(_group.getCommunity(), _group.getPath());
+	}
     
     @SuppressWarnings("unused")
     private ArrayList<GroupRole> getGroupRoles()
@@ -2195,6 +2222,195 @@ public abstract class SwingViewer extends madkit.simulation.viewer.SwingViewer i
 	    }
 	}
     }
+    
+	/**
+	 * Launch agents by parsing an XML node. The method
+	 * immediately returns without waiting the end of the agents' activation, 
+	 * 
+	 * @param agentXmlNode the XML node
+	 * @return {@link ReturnCode#SEVERE} if the launch failed
+	 * 
+	 * @see XMLUtilities
+	 */
+	@Override public ReturnCode launchNode(Node agentXmlNode){
+		if(logger != null)
+			logger.finest("launchNode "+XMLUtilities.nodeToString(agentXmlNode));
+		final NamedNodeMap namesMap = agentXmlNode.getAttributes();
+		try {
+			ArrayList<MKGEAbstractAgent> list_mkge_aa = new ArrayList<>();
+			ArrayList<madkit.kernel.AbstractAgent> list_mk_aa = new ArrayList<>();
+			int nbOfInstances = 1;
+			try {
+				nbOfInstances = Integer.parseInt(namesMap.getNamedItem(XMLUtilities.NB_OF_INSTANCES).getNodeValue());
+			} catch (NullPointerException e) {
+			}
+			
+			this.createBucket(namesMap.getNamedItem(XMLUtilities.CLASS).getNodeValue(), nbOfInstances, 1, list_mkge_aa, list_mk_aa);
+			
+			
+			//required for bucket mode with no roles
+			boolean bucketMode = false;
+			try {
+				bucketMode = Boolean.parseBoolean(namesMap.getNamedItem(XMLUtilities.BUCKET_MODE).getNodeValue());
+			} catch (NullPointerException e) {
+			}
+			
+			NodeList attributes = agentXmlNode.getChildNodes();
+			List<Role> roles= new ArrayList<>();
+			for (int i = 0; i < attributes.getLength(); i++) {
+				Node node = attributes.item(i);
+				switch (node.getNodeName()) {
+				case XMLUtilities.ATTRIBUTES:
+					NamedNodeMap att = node.getAttributes();
+					final Class<? extends madkit.kernel.AbstractAgent> MKagentClass = list_mk_aa.get(0).getClass();
+					for (int j = 0; j < att.getLength(); j++) {
+						Node item = att.item(j);
+						setAgentValues(madkit.kernel.Probe.findFieldOn(MKagentClass, item.getNodeName()),item.getNodeValue(),list_mkge_aa);
+					}
+					break;
+				case XMLUtilities.BUCKET_MODE_ROLE:
+					bucketMode = true;
+					NamedNodeMap roleAttributes = node.getAttributes();
+					roles.add(new Role(Group.getGroupFromPath(roleAttributes.item(0).getNodeValue(), roleAttributes.item(1).getNodeValue()), roleAttributes.item(2).getNodeValue()));
+					break;
+				default:
+					break;
+				}
+			}
+			
+			if (bucketMode) {
+			    launchAgentBucket(list_mkge_aa, list_mk_aa, 1, roles.toArray(new Role[roles.size()]));
+			}
+			else{
+				try {
+					Level logLevel = Level.parse(namesMap.getNamedItem(XMLUtilities.LOG_LEVEL).getNodeValue());
+					for (MKGEAbstractAgent abstractAgent : list_mkge_aa) {
+						abstractAgent.setLogLevel(logLevel);
+					}
+				} catch (NullPointerException e) {
+				}
+				
+				boolean guiMode = false;
+				try {
+					guiMode = Boolean.parseBoolean(namesMap.getNamedItem(XMLUtilities.GUI).getNodeValue());
+				} catch (NullPointerException e) {
+				}
+				for (final madkit.kernel.AbstractAgent abstractAgent : list_mk_aa) {
+					launchAgent(abstractAgent, 0, guiMode);
+				}
+			}
+		} catch (NullPointerException | ClassNotFoundException | NoSuchFieldException | NumberFormatException | InstantiationException | IllegalAccessException e) {
+			getLogger().severeLog("launchNode "+ Words.FAILED+" : "+XMLUtilities.nodeToString(agentXmlNode),e);
+			return ReturnCode.SEVERE;
+		}
+		return ReturnCode.SUCCESS;
+	}
+
+	/**
+	 * @param stringValue
+	 * @param type
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 */
+	private void setAgentValues(final Field f, final String stringValue, List<MKGEAbstractAgent> l) throws IllegalAccessException {
+		final Class<?> type = f.getType();
+		if(type.isPrimitive()){
+			if (type == int.class){
+				int value = Integer.parseInt(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setInt(a, value);
+				}
+			}
+			else if(type == boolean.class){
+				boolean value = Boolean.parseBoolean(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setBoolean(a, value);
+				}
+			}
+			else if (type == float.class){
+				float value = Float.parseFloat(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setFloat(a, value);
+				}
+			}
+			else if (type == double.class){
+				double value = Double.parseDouble(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setDouble(a, value);
+				}
+			}
+			else if (type == byte.class){
+				byte value = Byte.parseByte(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setByte(a, value);
+				}
+			}
+			else if (type == short.class){
+				short value = Short.parseShort(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setShort(a, value);
+				}
+			}
+			else if (type == long.class){
+				long value = Long.parseLong(stringValue);
+				for (MKGEAbstractAgent a : l) {
+					f.setLong(a, value);
+				}
+			}
+		}
+		else if (type == Integer.class){
+			int value = Integer.parseInt(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Integer(value));
+			}
+		}
+		else if(type == Boolean.class){
+			boolean value = Boolean.parseBoolean(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Boolean(value));
+			}
+		}
+		else if (type == Float.class){
+			float value = Float.parseFloat(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Float(value));
+			}
+		}
+		else if (type == Double.class){
+			double value = Double.parseDouble(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Double(value));
+			}
+		}
+		else if (type == String.class){
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, stringValue);
+			}
+		}
+		else if (type == Byte.class){
+			byte value = Byte.parseByte(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Byte(value));
+			}
+		}
+		else if (type == Short.class){
+			short value = Short.parseShort(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Short(value));
+			}
+		}
+		else if (type == Long.class){
+			long value = Long.parseLong(stringValue);
+			for (MKGEAbstractAgent a : l) {
+				f.set(a, new Long(value));
+			}
+		}
+		else{
+			if(logger != null)
+				logger.severe("Do not know how to change attrib "+stringValue);
+		}
+	}
+    
     
     /**
      * @throws IllegalAccessError when the function is called.

@@ -336,6 +336,53 @@ public abstract class SwingViewer extends madkit.simulation.viewer.SwingViewer i
 
 	}
     }
+    
+    /**
+     * Replace automatically requested groups by other groups. To replace the old abstract group, the references are used, and not the equals function. So the replacement is done only if <code>_old_group==_new_group</code>. 
+     * @param _old_group the old group to compare and replace according its reference
+     * @param _new_group the new group to replace
+     * @return true if the operation have succeeded.
+     * 
+     * @see #autoRequestRole(AbstractGroup, String, Object)
+     */
+    public boolean replaceAutoRequestedGroup(AbstractGroup _old_group, AbstractGroup _new_group)
+    {
+	if (_old_group==null)
+	    return false;
+	if (_new_group==null)
+	    removeAutoRequestedGroup(_old_group);
+
+	synchronized(m_group_roles)
+	{
+	    if (groups_to_auto_request!=null)
+	    {
+		AbstractGroupRole found=null;
+		Iterator<AbstractGroupRole> it=groups_to_auto_request.iterator();
+		while (it.hasNext())
+		{
+		    AbstractGroupRole agr=it.next();
+		    
+		    if (agr.group==_old_group)
+		    {
+			found=agr;
+			it.remove();
+			break;
+		    }
+		}
+		if (found!=null)
+		{
+		    groups_to_auto_request.add(new AbstractGroupRole(_new_group, found.role, found.passKey));
+		    potentialChangementInGroups();
+		    return true;
+		}
+		else 
+		    return false;
+	    }
+	}
+	return false;
+    }
+    
+    
     /**
      * Remove group from automatically requested groups. If this group is contained into a MultiGroup, or if it is contained into the subdirectories of a Group that represent them, then all the concerned AbstractGroup is removed. 
      * @param _group the given group

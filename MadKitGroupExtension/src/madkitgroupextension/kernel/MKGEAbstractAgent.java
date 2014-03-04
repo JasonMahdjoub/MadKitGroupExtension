@@ -1431,6 +1431,18 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
      * @see #autoRequestRole(AbstractGroup, String, Object)
      */
     public void removeAutoRequestedRole(String role);
+
+    
+    /**
+     * Replace automatically requested groups by other groups. To replace the old abstract group, the references are used, and not the equals function. So the replacement is done only if <code>_old_group==_new_group</code>. 
+     * @param _old_group the old group to compare and replace according its reference
+     * @param _new_group the new group to replace
+     * @return true if the operation have succeeded.
+     * 
+     * @see #autoRequestRole(AbstractGroup, String, Object)
+     */
+    public boolean replaceAutoRequestedGroup(AbstractGroup _old_group, AbstractGroup _new_group);
+    
     /**
      * Remove group from automatically requested groups. If this group is contained into a MultiGroup, or if it is contained into the subdirectories of a Group that represent them, then all the concerned AbstractGroup is removed. 
      * @param _group the given group

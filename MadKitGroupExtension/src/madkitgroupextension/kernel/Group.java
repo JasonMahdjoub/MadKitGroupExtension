@@ -63,7 +63,7 @@ public final class Group extends AbstractGroup
     
     /**
      * Construct a group within a community and a path of groups.
-     * This constructor has the same effect than <code>Group(false, false, null, _community, _groups)</code>.
+     * This constructor has the same effect than <code>Group(false, false, null, false, _community, _groups)</code>.
      * 
      * Here a typical example :
      * <p>
@@ -95,7 +95,7 @@ public final class Group extends AbstractGroup
     
     /**
      * Construct a group within a community and a path of groups.
-     * This constructor has the same effect than <code>Group(_useSubGroups, false, null, _community, _groups)</code>.
+     * This constructor has the same effect than <code>Group(_useSubGroups, false, null, false, _community, _groups)</code>.
      * 
      * Here a typical example :
      * <p>
@@ -132,7 +132,7 @@ public final class Group extends AbstractGroup
     }
     /**
      * Construct a group within a community and a path of groups.
-     * This constructor has the same effect than <code>Group(_useSubGroups, isDistributed, null, _community, _groups)</code>.
+     * This constructor has the same effect than <code>Group(_useSubGroups, isDistributed, null, false, _community, _groups)</code>.
      * 
      * Here a typical example :
      * <p>
@@ -170,10 +170,10 @@ public final class Group extends AbstractGroup
 	this(_useSubGroups, _isDistributed, null, _community, _groups);
     }
     
-    
     /**
      * Construct a group within a community and a path of groups.
-     *      * 
+     * This constructor has the same effect than <code>Group(_useSubGroups, isDistributed, _theIdentifier, false, _community, _groups)</code>.
+     * 
      * Here a typical example :
      * <p>
      * <pre>
@@ -213,9 +213,55 @@ public final class Group extends AbstractGroup
     
     public Group(boolean _useSubGroups, boolean _isDistributed, Gatekeeper _theIdentifier, String _community, String ..._groups)
     {
+	this(_useSubGroups, _isDistributed, _theIdentifier, false, _community, _groups);
+    }
+    
+    /**
+     * Construct a group within a community and a path of groups.
+     *      * 
+     * Here a typical example :
+     * <p>
+     * <pre>
+     * Group g=new Group(false, null, false, "My community", "My group", "My subgroup 1", "My subgroup 2");
+     * </pre>
+     * The created group "My subgroup 2" is contained into the group "My subgroup 1" 
+     * which is contained on the group "My group", which is contained into the community "My community". 
+     * The obtained group does not represent its subgroups. He is not distributed through several instances 
+     * of MadKit into a network. No Gatekeeper is given.
+     * 
+     * Through the function {@link #getPath()}, you can observe the used String path (containing '/' characters) into MadKit for this group. 
+     * To convert a String path to a Group class, use the function {@link #getGroupFromPath(String, String)} or this constructor as follows :
+     * <p>
+     * <pre>
+     * String MyPath="/My group/My subgroup 1/My subgroup 2"
+     * Group g=new Group(false, false, null, "My community", MyPath);
+     * </pre>
+     * 
+     * This is the only way to introduce a '/' character into this constructor. 
+     * 
+     * @param _isDistributed tell if the group is distributed through several instances of MadKit into a network.
+     * @param _isReserved tell if the group does not authorize other instances with the same group
+     * @param _theIdentifier
+     *           any object that implements the {@link Gatekeeper} interface. If
+     *           not <code>null</code>, this object will be used to check if an
+     *           agent can be admitted in the group. When this object is null,
+     *           there is no group access control.
+     * @param _community the community
+     * @param _groups the path of groups 
+     * @throws IllegalArgumentException if a group name is empty, or if a group name contains a ';' character. 
+     *  @since MadKitGroupExtension 1.0
+     *  @see madkit.kernel.Gatekeeper
+     */
+    public Group(boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String _community, String ..._groups)
+    {
+	this(false, _isDistributed, _theIdentifier, _isReserved, _community, _groups);
+    }
+    
+    private Group(boolean _useSubGroups, boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String _community, String ..._groups)
+    {
 	if (_groups.length==1 && _groups[0].contains("/"))
 	    _groups=getGroupsStringFromPath(_groups[0]);
-	m_group=getRoot(_community).getGroup(_isDistributed, _theIdentifier, _groups);
+	m_group=getRoot(_community).getGroup(_isDistributed, _theIdentifier, _isReserved, _groups);
 	    
 	m_use_sub_groups=_useSubGroups;
 	if (!m_use_sub_groups)
@@ -271,13 +317,14 @@ public final class Group extends AbstractGroup
 	String path=ois.readUTF();
 	this.m_use_sub_groups=ois.readBoolean();
 	boolean dist=ois.readBoolean();
+	boolean isReserved=ois.readBoolean();
 	this.m_parent_groups=null;
 	this.m_parent_groups_tree=null;
 	this.m_represented_groups=null;
 	this.m_sub_groups=null;
 	this.m_sub_groups_tree=null;
 	
-	m_group=getRoot(com).getGroup(dist, null, getGroupsStringFromPath(path));
+	m_group=getRoot(com).getGroup(dist, null, isReserved, getGroupsStringFromPath(path));
 	    
 	if (!m_use_sub_groups)
 	{
@@ -298,12 +345,17 @@ public final class Group extends AbstractGroup
 	oos.writeUTF(this.getPath());
 	oos.writeBoolean(this.m_use_sub_groups);
 	oos.writeBoolean(this.isMadKitDistributed());
+	oos.writeBoolean(isReserved());
    }    
     
+    public boolean isReserved()
+    {
+	return this.m_group.isReserved();
+    }
     
     /**
      * Returns the parent group of this group.
-     * @return the parent group
+     * @return the parent group or null if the parent group is reserved.
      * @since MadKitGroupExtension 1.0
      */
     public Group getParent()
@@ -311,19 +363,23 @@ public final class Group extends AbstractGroup
 	GroupTree p=m_group.getParent();
 	if (p==null)
 	    return null;
+	else if (p.isReserved())
+	    return null;
 	else
 	    return new Group(m_group.getParent());
     }
     
     /**
      * Returns the parent group of this group. This parent group will represent also all its subgroups.
-     * @return the parent group.
+     * @return the parent group or null if the parent group is reserved.
      * @since MadKitGroupExtension 1.0
      */
     public Group getParentWithItsSubGroups()
     {
 	GroupTree p=m_group.getParent();
 	if (p==null)
+	    return null;
+	else if (p.isReserved())
 	    return null;
 	else
 	    return new Group(m_group.getParent(), true, true);
@@ -364,6 +420,7 @@ public final class Group extends AbstractGroup
 
     /**
      * Returns a subgroup contained on this group, or on one of its subgroups.
+     * This function is the same call than <code>getSubGroup(false, _groups)</code>
      * 
      * Here a simple example :
      * <pre>
@@ -383,7 +440,31 @@ public final class Group extends AbstractGroup
      */
     public Group getSubGroup(String ..._groups)
     {
-	return new Group(m_group.getGroup(m_group.isMadKitDistributed(), m_group.getMadKitIdentifier(), _groups), false, false);
+	return this.getSubGroup(false, _groups);
+    }
+    /**
+     * Returns a subgroup contained on this group, or on one of its subgroups.
+     * 
+     * Here a simple example :
+     * <pre>
+     * 	Group a=new Group("My community", "A");
+     *  Group aa=new Group("My community", "A", "A");
+     *  Group ab=new Group("My community", "A", "B");
+     *  Group aba=new Group("My community", "A", "B", "A");
+     *  
+     *  Group subgroup=ab.getSubGroup("A");
+     * </pre>
+     * On this example, the group <code>subgroup</code> is the same group than <code>aba</code>
+     * 
+     * 
+     * @param _isReserved tell if the group does not authorize other instances with the same group
+     * @param _groups the path of the desired subgroup
+     * @return the subgroup
+     * @since MadKitGroupExtension 1.0
+     */
+    public Group getSubGroup(boolean _isReserved, String ..._groups)
+    {
+	return new Group(m_group.getGroup(m_group.isMadKitDistributed(), m_group.getMadKitIdentifier(), _isReserved, _groups), false, false);
     }
     /**
      * This function works in the same way that the function {@link #getSubGroup(String...)}. 
@@ -395,7 +476,7 @@ public final class Group extends AbstractGroup
      */
     public Group getSubGroupWithItsSubGroups(String ..._group)
     {
-	return new Group(m_group.getGroup(m_group.isMadKitDistributed(), m_group.getMadKitIdentifier(), _group), true, false);
+	return new Group(m_group.getGroup(m_group.isMadKitDistributed(), m_group.getMadKitIdentifier(), false, _group), true, false);
     }
     
     /**
@@ -418,7 +499,7 @@ public final class Group extends AbstractGroup
     /**
      * This function enable to return all the subgroups of this group, i.e. all the subgroups that are handled by one or more agents. 
      * @param ka the used kernel address
-     * @return the subgroups that are handled by one or more agents.
+     * @return the subgroups that are handled by one or more agents, excepted those that are reserved
      * @since MadKitGroupExtension 1.0
      */
     public Group[] getSubGroups(KernelAddress ka)
@@ -426,16 +507,19 @@ public final class Group extends AbstractGroup
 	GroupTree[] sub_groups=m_group.getSubGroups(ka);
 	if (m_sub_groups_tree!=sub_groups)
 	{
-	    Group[] res=new Group[sub_groups.length];
+	    ArrayList<Group> res=new ArrayList<Group>();
+	    
 	    for (int i=0;i<sub_groups.length;i++)
 	    {
-		res[i]=new Group(sub_groups[i], false, true);
+		if (!sub_groups[i].isReserved())
+		    res.add(new Group(sub_groups[i], false, true));
 	    }
 	    
 	    synchronized(this)
 	    {
 		m_represented_groups=null;
-		m_sub_groups=res;
+		m_sub_groups=new Group[res.size()];
+		res.toArray(m_sub_groups);
 		m_sub_groups_tree=sub_groups;
 	    }
 	}
@@ -445,7 +529,7 @@ public final class Group extends AbstractGroup
     /**
      * Return all the parent groups of this group. Note that these parent groups are not necessarily handled by one or more agents.
      * 
-     * @return all the parent groups of this group. Note that these parent groups are not necessarily handled by one or more agents.
+     * @return all the parent groups of this group excepted those that are reserved. Note that these parent groups are not necessarily handled by one or more agents.
      * @since MadKitGroupExtension 1.0 
      */
     public Group[] getParentGroups()
@@ -453,15 +537,18 @@ public final class Group extends AbstractGroup
 	GroupTree[] parent_groups=m_group.getParentGroups();
 	if (m_parent_groups_tree!=parent_groups)
 	{
-	    Group[] res=new Group[parent_groups.length];
+	    ArrayList<Group> res=new ArrayList<>(parent_groups.length);
+	    
 	    for (int i=0;i<parent_groups.length;i++)
 	    {
-		res[i]=new Group(parent_groups[i], false, true);
+		if (!parent_groups[i].isReserved())
+		    res.add(new Group(parent_groups[i], false, true));
 	    }
 	    
 	    synchronized(this)
 	    {
-		m_parent_groups=res;
+		m_parent_groups=new Group[res.size()];
+		res.toArray(m_parent_groups);
 		if (m_use_sub_groups) 
 		    m_represented_groups=null;
 		m_parent_groups_tree=parent_groups;
@@ -540,7 +627,7 @@ public final class Group extends AbstractGroup
      * instance. Moreover, if the previous group have not been already handled by one agent, an empty list is returned.       
      * 
      * @param ka the used kernel address. 
-     * @return the represented groups
+     * @return the represented groups excepted those that are reserved
      * @since MadKitGroupExtension 1.0
      * @see AbstractGroup
      */
@@ -558,7 +645,10 @@ public final class Group extends AbstractGroup
 		    if (this.isMadKitCreated(ka))
 		    {
 			m_represented_groups=new Group[sg.length+1];
-			m_represented_groups[0]=this;
+			if (this.isUsedSubGroups())
+			    m_represented_groups[0]=this.getThisGroupWithoutItsSubGroups();
+			else
+			    m_represented_groups[0]=this;
 			System.arraycopy(sg, 0, m_represented_groups, 1, sg.length);
 		    }
 		    else
@@ -747,6 +837,10 @@ public final class Group extends AbstractGroup
 	    }
 	}
 	
+	public boolean isReserved()
+	{
+	    return isReserved;
+	}
 	
 	private final ArrayList<GroupTree> m_sub_groups=new ArrayList<GroupTree>();
 	protected final String m_community;
@@ -757,7 +851,7 @@ public final class Group extends AbstractGroup
 	private final Gatekeeper m_identifier;
 	private int m_references=0;
 	private HashMap<KernelAddress, KernelReferences> m_kernel_references=new HashMap<KernelAddress, KernelReferences>();
-	
+	private boolean isReserved;
 	
 	//private final LinkedList<GroupTree> m_all_sub_groups=new LinkedList<GroupTree>();
 	//private GroupTree[] m_all_sub_groups_duplicated=new GroupTree[0];
@@ -781,10 +875,11 @@ public final class Group extends AbstractGroup
 	    m_parent=null;
 	    m_is_distributed=true;
 	    m_identifier=null;
+	    isReserved=false;
 	}
 	
 
-	private GroupTree(String group, GroupTree _parent, boolean _isDistributed, Gatekeeper _theIdentifier)
+	private GroupTree(String group, GroupTree _parent, boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved)
 	{
 	    if (group.length()==0)
 		throw new IllegalArgumentException("There is a group whose name is empty");
@@ -799,17 +894,18 @@ public final class Group extends AbstractGroup
 	    m_parent=_parent;
 	    m_is_distributed=_isDistributed;
 	    m_identifier=_theIdentifier;
+	    isReserved=_isReserved;
 	}
-	public GroupTree getGroup(boolean _isDistributed, Gatekeeper _theIdentifier, String ..._group)
+	public GroupTree getGroup(boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String ..._group)
 	{
 	    if (_group.length==0)
 		return this;
 
-	    return getGroup(_isDistributed, _theIdentifier, 0, _group);
+	    return getGroup(_isDistributed, _theIdentifier, 0, _isReserved, _group);
 	}
 	
 	
-	private synchronized GroupTree getGroup(boolean _isDistributed, Gatekeeper _theIdentifier, int i, String ..._group)
+	private synchronized GroupTree getGroup(boolean _isDistributed, Gatekeeper _theIdentifier, int i, boolean _isReserved, String ..._group)
 	{
 	    String g=_group[i];
 	    
@@ -819,20 +915,32 @@ public final class Group extends AbstractGroup
 		{
 		    if (i==_group.length-1)
 		    {
+			if ((_isReserved && gt.getNbReferences()>0) || gt.isReserved)
+			{
+			    String err="";
+			    for (String s : _group)
+				err+=s+"/";
+			    if (gt.isReserved)
+				throw new IllegalArgumentException("The group "+err+" is reserved !");
+			    else
+				throw new IllegalArgumentException("The group "+err+" cannot be reserved, because it have already been reserved !");
+			}
+			if (_isReserved)
+			    gt.isReserved=true;
 			gt.incrementReferences();
 			return gt;
 		    }
 		    else
-			return gt.getGroup(_isDistributed, _theIdentifier, i+1, _group);
+			return gt.getGroup(_isDistributed, _theIdentifier, i+1, _isReserved, _group);
         	}
 	    }
 
-	    GroupTree gt=new GroupTree(g, this, _isDistributed, _theIdentifier);
+	    GroupTree gt=new GroupTree(g, this, _isDistributed, _theIdentifier, (i==_group.length-1)?_isReserved:false);
 	    GroupTree res;
 	    if (i==_group.length-1)
 		res=gt;
 	    else
-		res=gt.getGroup(_isDistributed, _theIdentifier, i+1, _group);
+		res=gt.getGroup(_isDistributed, _theIdentifier, i+1, _isReserved, _group);
 	    addSubGroup(gt);
 	    return res;
 	}
@@ -1100,6 +1208,10 @@ public final class Group extends AbstractGroup
 	public synchronized void incrementReferences()
 	{
 	    ++m_references;
+	}
+	public synchronized int getNbReferences()
+	{
+	    return m_references;
 	}
 	public synchronized void decrementReferences()
 	{

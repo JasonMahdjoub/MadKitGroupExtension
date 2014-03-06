@@ -90,6 +90,9 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization when an agent enters the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been added to this group/role
 	 */
     protected void adding(A theAgent)
@@ -102,11 +105,15 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
     protected void adding(List<A> agents)
     {
-	
+	for (A a : agents)
+	    adding(a);
     }
     
     public synchronized void allAgentsLeaveRole()
@@ -118,7 +125,10 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
     }
 
 	/** 
-	 * Returns a snapshot at moment t of the agents handling the group/role couple
+	 * Returns a snapshot at moment t of the agents handling one of the groups represented by the AbstractGroup given in parameter in the constructor of this class. On each of these groups, the agent must have the given role into the same constructor.
+	 * 
+	 * Returned agents are not duplicated.
+	 * 
 	 * @return a list view (a snapshot at moment t) of the agents that handle the group/role couple (in proper sequence)
 	 * @since MadKit 3.0
 	 * @since MadKitGroupExtension 1.0
@@ -138,11 +148,28 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 		l.add(l2);
 		size+=l2.size();
 	    }
-	
 	    m_agents=new ArrayList<A>(size);
-	    for (List<A> l2 : l )
+	    if (l.size()>0)
 	    {
-		m_agents.addAll(l2);
+		m_agents.addAll(l.get(0));
+		for (int i=1;i<l.size();i++)
+		{
+		    List<A> l2=l.get(i);
+		    for (A a : l2)
+		    {
+			boolean found=false;
+			for (A a2 : m_agents)
+			{
+			    if (a2==a)
+			    {
+				found=true;
+				break;
+			    }
+			}
+			if (!found)
+			    m_agents.add(a);
+		    }
+		}
 	    }
 	    m_is_changed=false;
 	}
@@ -300,6 +327,9 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some work when an agent leaves the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been removed from this group/role
 	 */
     protected void removing(A theAgent)
@@ -312,11 +342,15 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
     protected void removing(List<A> agents) 
     {
-	
+	for (A a : agents)
+	    removing(a);
     }
     
 	/** 

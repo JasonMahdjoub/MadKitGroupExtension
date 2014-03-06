@@ -189,7 +189,7 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 2, 4);
+	c2.set(2014, 2, 5);
 	VERSION=new Version("MadKitGroupExtension", 1,3,6, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
@@ -219,7 +219,7 @@ public class MadKitGroupExtension
 	
 
 	c=Calendar.getInstance();
-	c.set(2014, 2, 4);
+	c.set(2014, 2, 5);
 	Description d=new Description(1,3,6,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Adding function 'AbstractAgent.replaceAutoRequestedGroup(AbstractGroup _old_group, AbstractGroup _new_group)'");
 	d.addItem("Removing constructor 'Group(boolean _useSubGroups, boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String _community, String ..._groups)' ");
@@ -229,6 +229,7 @@ public class MadKitGroupExtension
 	d.addItem("Altering function 'Group.getParentWithItsSubGroups()'");
 	d.addItem("Altering function 'Group.getRepresentedGroups(KernelAddress)'");
 	d.addItem("Altering function 'Group.getSubGroups(KernelAddress)'");
+	d.addItem("Function 'Probe.getCurrentAgentsList()' 'Activator.getCurrentAgentsList()', etc., do not return duplicated agents into the list.'");
 	VERSION.addDescription(d);
 
 	c=Calendar.getInstance();

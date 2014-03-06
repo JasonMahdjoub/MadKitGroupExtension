@@ -68,6 +68,9 @@ public class SingleAgentProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstra
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization when an agent enters the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been added to this group/role
 	 */
     	@Override protected void adding(A theAgent)
@@ -80,11 +83,15 @@ public class SingleAgentProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstra
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
     	@Override protected void adding(List<A> agents)
     	{
-	
+    	    for (A a : agents)
+    		adding(a);
     	}
 
     	@Override public synchronized void allAgentsLeaveRole()
@@ -95,8 +102,11 @@ public class SingleAgentProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstra
     	    }
 }
 
-    	/** 
-	 * Returns a snapshot at moment t of the agents handling the group/role couple
+	/** 
+	 * Returns a snapshot at moment t of the agents handling one of the groups represented by the AbstractGroup given in parameter in the constructor of this class. On each of these groups, the agent must have the given role into the same constructor.
+	 * 
+	 * Returned agents are not duplicated.
+	 * 
 	 * @return a list view (a snapshot at moment t) of the agents that handle the group/role couple (in proper sequence)
 	 * @since MadKit 3.0
 	 * @since MadKitGroupExtension 1.0
@@ -325,6 +335,9 @@ public synchronized void potentialChangementInGroups()
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some work when an agent leaves the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been removed from this group/role
 	 */
 @Override protected void removing(A theAgent)
@@ -337,10 +350,15 @@ public synchronized void potentialChangementInGroups()
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
 @Override protected void removing(List<A> agents) 
 {
+    for (A a : agents)
+	removing(a);
 	
 }
 

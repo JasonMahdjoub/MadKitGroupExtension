@@ -29,7 +29,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import madkit.simulation.activator.GenericBehaviorActivator;
+import madkitgroupextension.simulation.activator.GenericBehaviorActivator;
 
 /**
  * The class Activator of MadKitGroupExtension has the same role of the class Activator of MadKit. 
@@ -150,6 +150,9 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization when an agent enters the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class 
+	 * 
 	 * @param _agent which has been added to this group/role
 	 * @since MadKitGroupExtension 1.0
 	 */
@@ -163,18 +166,24 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
 	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param _agents the list of agents which have been added to this group/role at once.
 	 * @since MadKitGroupExtension 1.0
 	 */
     protected void adding(List<A> _agents)
     {
-	
+	for (A a : _agents)
+	    adding(a);
     }
 	/**
 	 * Called when an agent has leaved the corresponding group and role.
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some work when an agent leaves the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param _agent which has been removed from this group/role
 	 * @since MadKitGroupExtension 1.0
 	 */
@@ -187,12 +196,16 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param _agents the list of agents which have been removed from this group/role
 	 * @since MadKitGroupExtension 1.0
 	 */
     protected void removing(List<A> _agents)
     {
-	
+	for (A a : _agents)
+	    removing(a);
     }
     public synchronized void allAgentsLeaveRole() 
     {
@@ -296,7 +309,10 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
     }
     
 	/** 
-	 * Returns a snapshot at moment t of the agents handling the group/role couple
+	 * Returns a snapshot at moment t of the agents handling one of the groups represented by the AbstractGroup given in parameter in the constructor of this class. On each of these groups, the agent must have the given role into the same constructor.
+	 * 
+	 * Returned agents are not duplicated.
+	 * 
 	 * @return a list view (a snapshot at moment t) of the agents that handle the group/role couple (in proper sequence)
 	 * @since MadKit 3.0
 	 * @since MadKitGroupExtension 1.0
@@ -318,9 +334,27 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 	    }
 	
 	    m_agents=new ArrayList<A>(size);
-	    for (List<A> l2 : l )
+	    if (l.size()>0)
 	    {
-		m_agents.addAll(l2);
+		m_agents.addAll(l.get(0));
+		for (int i=1;i<l.size();i++)
+		{
+		    List<A> l2=l.get(i);
+		    for (A a : l2)
+		    {
+			boolean found=false;
+			for (A a2 : m_agents)
+			{
+			    if (a2==a)
+			    {
+				found=true;
+				break;
+			    }
+			}
+			if (!found)
+			    m_agents.add(a);
+		    }
+		}
 	    }
 	    m_list_changed=false;
 	}

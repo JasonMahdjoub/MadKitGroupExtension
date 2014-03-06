@@ -53,7 +53,7 @@ import madkitgroupextension.kernel.Watcher;
  */
 public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent, P>  extends Probe<A>
 {
-    private final String m_property;
+    private final String fieldName;
     private final ArrayList<PersonalPropertyProbe> m_madkit_property_probes=new ArrayList<PersonalPropertyProbe>();
     /*private boolean m_is_agent_properties_changed=true;
     private boolean m_is_properties_changed=true;
@@ -61,10 +61,10 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
     private HashMap<A,P> m_agent_properties=null;
     private ArrayList<P> m_properties=null;*/
     
-    public PropertyProbe(AbstractGroup _a, String _role, String _property)
+    public PropertyProbe(AbstractGroup _a, String _role, String _fieldName)
     {
 	super(_a, _role);
-	m_property=_property;
+	fieldName=_fieldName;
     }
 
 	/**
@@ -72,6 +72,9 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization when an agent enters the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been added to this group/role
 	 */
     @Override protected void adding(A theAgent)
@@ -84,11 +87,15 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent joined several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
     @Override protected void adding(List<A> agents)
     {
-	
+	    for (A a : agents)
+		adding(a);
     }
     
     @Override public synchronized void allAgentsLeaveRole()
@@ -224,7 +231,7 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 		{
 		    for (Group g : groups)
 		    {
-			PersonalPropertyProbe ppp=new PersonalPropertyProbe(g, m_role, m_property);
+			PersonalPropertyProbe ppp=new PersonalPropertyProbe(g, m_role, fieldName);
 			m_madkit_property_probes.add(ppp);
 			try
 			{
@@ -265,7 +272,7 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 			}
 			if (!found)
 			{
-			    PersonalPropertyProbe ppp=new PersonalPropertyProbe(g, m_role, m_property);
+			    PersonalPropertyProbe ppp=new PersonalPropertyProbe(g, m_role, fieldName);
 			    m_madkit_property_probes.add(ppp);
 			    try
 			    {
@@ -376,6 +383,9 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some work when an agent leaves the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param theAgent which has been removed from this group/role
 	 */
     @Override protected void removing(A theAgent)
@@ -388,16 +398,21 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	 * This method is protected because it is automatically called
 	 * by the MadKit kernel. Override this method when you want
 	 * to do some initialization on the agents that enter the group/role.
+	 * 
+	 * This function can be called several times for the same agent if the agent leaved several groups, each represented by the given AbstractGroup into the constructor of this class
+	 * 
 	 * @param agents the list of agents which have been removed from this group/role
 	 */
     @Override protected void removing(List<A> agents) 
     {
+	    for (A a : agents)
+		removing(a);
 	
     }
 
     @Override public String toString()
     {
-	return "PropertyProbe with "+getGroup()+" and role "+getRole()+" and property "+m_property;
+	return "PropertyProbe with "+getGroup()+" and role "+getRole()+" and property "+fieldName;
     }
 
     @Override protected synchronized void setChanged(boolean _is_changed)

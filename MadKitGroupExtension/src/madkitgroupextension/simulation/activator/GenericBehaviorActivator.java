@@ -21,10 +21,10 @@
 
 package madkitgroupextension.simulation.activator;
 
+import java.lang.reflect.Field;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
-import madkit.kernel.AbstractAgent;
-import madkit.kernel.Scheduler;
 import madkitgroupextension.kernel.AbstractGroup;
 import madkitgroupextension.kernel.Activator;
 import madkitgroupextension.kernel.MKGEAbstractAgent;
@@ -50,10 +50,10 @@ import madkitgroupextension.kernel.MKGEAbstractAgent;
  * @see Activator
  */
 
-public final class GenericBehaviorActivator<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> extends Activator<A>
+public class GenericBehaviorActivator<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> extends Activator<A>
 {
     protected String m_the_behavior_to_activate;
-    
+    private PersonalActivatorExecutor m_executor=null;
 	/**
 	 * Builds a new GenericBehaviorActivator on the given CGR location of the
 	 * artificial society. Once created, it has to be added by a {@link Scheduler} 
@@ -69,6 +69,65 @@ public final class GenericBehaviorActivator<A extends madkit.kernel.AbstractAgen
 	super(_group, _role, theBehaviorToActivate);
 	m_the_behavior_to_activate=theBehaviorToActivate;
     }
+    
+	/**
+	 * This should define what has to be done on the agents
+	 * for a simulation step. By default, this calls is automatically made
+	 * using a list containing all the agents for this CGR, 
+	 * i.e. {@link #getCurrentAgentsList()} is used by default.
+	 * 
+	 * When the multicore mode is on, the list is only a portion and
+	 * this method will automatically be distributed over several threads.
+	 * So, one has to take care about how the activator's fields are used
+	 * here to avoid a {@link ConcurrentModificationException} for instance.
+	 * 
+	 * @param _agentsList
+	 * @param args arguments that could be used by the scheduler 
+	 * to pass information to this activator for an activation
+	 * @since 1.1
+	 */
+    @SuppressWarnings("unchecked")
+    @Override public void execute(List<A> _agentsList, Object ...args)
+    {
+	
+	if (m_executor==null)
+	{
+	    try
+	    {
+		m_executor = (PersonalActivatorExecutor)executor_field.get(this);
+	    }
+	    catch (IllegalArgumentException | IllegalAccessException e)
+	    {
+		System.err.println("Impossible to access the field m_executor of the class Activator. This is an inner bug of MadKitGroupExtension. Please contact the developers. Impossible to continue. See the next exception :");
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	}
+	m_executor.personalExecute(_agentsList, args);
+	
+    }
+    
+    
+    static final Field executor_field;
+    
+    static
+    {
+	Field m=null;
+	try
+	{
+	    m=Activator.class.getDeclaredField("m_executor");
+	    m.setAccessible(true);
+	}
+	catch (NoSuchFieldException | SecurityException e)
+	{
+	    System.err.println("Impossible to access the field m_executor of the class Activator. This is an inner bug of MadKitGroupExtension. Please contact the developers. Impossible to continue. See the next exception :");
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	
+	executor_field=m;
+    }
+    
     /**
      * this method is reserved to internal processes of MadKitGroupExtension.
      */
@@ -92,13 +151,18 @@ public final class GenericBehaviorActivator<A extends madkit.kernel.AbstractAgen
 	@Override public List<A> getCurrentAgentsList()
 	{
 	    return GenericBehaviorActivator.this.getCurrentAgentsList();
+	    
+	}
+	@Override public void execute(List<A> agents, Object ...args)
+	{
+	    GenericBehaviorActivator.this.execute(agents, args);
 	}
 	
-    }
-
-    @Override
-    public final void execute(List<A> _agentList, Object... _args)
-    {
+	public void personalExecute(List<A> agents, Object ...args)
+	{
+	    super.execute(agents, args);
+	}
+	
     }
 
 }

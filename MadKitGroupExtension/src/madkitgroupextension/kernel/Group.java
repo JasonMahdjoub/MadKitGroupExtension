@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicReference;
 
+import madkit.kernel.AgentAddress;
 import madkit.kernel.Gatekeeper;
 import madkit.kernel.KernelAddress;
 
@@ -753,6 +754,19 @@ public final class Group extends AbstractGroup
 	return new Group(_community, Group.getGroupsStringFromPath(_path));
     }
     
+    /**
+     * Return a group from an agent address.
+     * 
+     * @param _address the agent address
+     * @return the corresponding group.
+     * @since MadKitGroupExtension 1.3.7
+     */
+    public static Group getGroupFromAgentAddress(AgentAddress _address)
+    {
+	if (_address==null)
+	    return null;
+	return getGroupFromPath(_address.getCommunity(), _address.getGroup());
+    }
     
     static private final ArrayList<GroupChangementNotifier> m_objects_to_notify=new ArrayList<GroupChangementNotifier>(100);
     

@@ -27,6 +27,7 @@ import madkit.kernel.AbstractAgent;
 import madkit.kernel.Agent;
 import madkit.kernel.AgentAddress;
 import madkit.kernel.Message;
+import madkit.message.MessageFilter;
 
 /**
  * This is the common interface for the next MadKitGroupExtension agents : Agent, Scheduler.
@@ -330,4 +331,54 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 */
 	public void pause(final int milliSeconds);
 	
+	/**
+	 * Retrieves and removes the next message that is a reply
+	 * to the query message, waiting for ever if necessary
+	 * until a matching reply becomes available.
+	 * 
+	 * @param query the message for which a reply is waited for 
+	 * 
+	 * @return 	the first reply to the query message
+	 * @since MadKit 5.0.4
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public Message waitAnswer(final Message query);
+
+	/**
+	 * Retrieves and removes the next message that is a reply
+	 * to the query message, waiting for ever if necessary
+	 * until a matching reply becomes available.
+	 * 
+	 * @param query the message for which a reply is waited for 
+	 * @param timeOutMilliSeconds the maximum time to wait, in milliseconds.
+	 * 
+	 * @return 	the first reply to the query message
+	 * @since MadKit 5.0.4
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public Message waitAnswer(final Message query, final Integer timeOutMilliSeconds);
+	
+	/**
+	 * Retrieves and removes the next message that complies
+	 * with the filter, waiting for ever if necessary
+	 * until a matching message becomes available.
+	 * 
+	 * @param filter
+	 * 
+	 * @return 	the first received message that matches the filter
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public Message waitNextMessage(final MessageFilter filter);
+
+	/**
+	 * This method gets the next message of the mailbox or waits 
+	 * for a new incoming acceptable message up to a certain delay.
+	 * 
+	 * @param timeOutMilliseconds the maximum time to wait, in milliseconds.
+	 * @param filter
+	 * 
+	 * @return a message that matches or <code>null</code> otherwise.
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public Message waitNextMessage(final Integer timeOutMilliseconds, final MessageFilter filter);	
 }

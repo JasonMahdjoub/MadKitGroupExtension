@@ -50,6 +50,7 @@ import madkit.kernel.AbstractAgent.ReturnCode;
 import madkit.kernel.AbstractAgent.State;
 import madkit.kernel.Madkit.Option;
 import madkit.message.EnumMessage;
+import madkit.message.MessageFilter;
 import madkit.util.XMLUtilities;
 
 
@@ -1549,4 +1550,23 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * @see XMLUtilities
 	 */
 	public ReturnCode launchNode(Node agentXmlNode);
+
+	/**
+	 * Retrieves and removes the first message of the
+	 * mailbox that matches the filter.
+	 * 
+	 * @return The next acceptable message or <code>null</code> if no such message has been found.
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public Message nextMessage(MessageFilter filter);
+	
+	/**
+	 * Retrieves and removes all the messages of the
+	 * mailbox that match the filter. 
+	 * 
+	 * @param filter if <code>null</code> all the messages are returned and removed from the mailbox.
+	 * @return the ordered list of matching messages, or an empty list if none has been found.
+	 * @since MadKitGroupExtension 1.4.0
+	 */
+	public List<Message> nextMessages(MessageFilter filter);
 }

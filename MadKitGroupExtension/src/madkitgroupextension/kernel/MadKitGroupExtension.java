@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 2, 5);
-	VERSION=new Version("MadKitGroupExtension", 1,3,6, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2014, 2, 17);
+	VERSION=new Version("MadKitGroupExtension", 1,4,0, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -219,8 +219,20 @@ public class MadKitGroupExtension
 	
 
 	c=Calendar.getInstance();
+	c.set(2014, 2, 17);
+	Description d=new Description(1,4,0,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Updating to MadKit 5.0.4'");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
+	c.set(2014, 2, 9);
+	d=new Description(1,3,7,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adding function 'Group.getGroupFromAgentAddress(AgentAddress)'");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2014, 2, 5);
-	Description d=new Description(1,3,6,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,3,6,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Adding function 'AbstractAgent.replaceAutoRequestedGroup(AbstractGroup _old_group, AbstractGroup _new_group)'");
 	d.addItem("Removing constructor 'Group(boolean _useSubGroups, boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String _community, String ..._groups)' ");
 	d.addItem("Adding constructor 'Group(boolean _isDistributed, Gatekeeper _theIdentifier, boolean _isReserved, String _community, String ..._groups)' ");

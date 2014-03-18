@@ -25,9 +25,11 @@ import java.lang.reflect.Field;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
+import madkitgroupextension.kernel.AbstractAgent;
 import madkitgroupextension.kernel.AbstractGroup;
 import madkitgroupextension.kernel.Activator;
 import madkitgroupextension.kernel.MKGEAbstractAgent;
+import madkitgroupextension.kernel.Scheduler;
 
 /**
  * The class GenericBehaviorActivator of MadKitGroupExtension is similar to the class GenericBehaviorActivator of MadKit. 

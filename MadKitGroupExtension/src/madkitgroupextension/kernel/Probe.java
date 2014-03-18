@@ -29,6 +29,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import madkitgroupextension.simulation.probe.PropertyProbe;
+
 /**
  * The class Probe of MadKitGroupExtension seems like the class Probe of MadKit. 
  * The provided documentation is copy/pasted from the original documentation of MadKit. 

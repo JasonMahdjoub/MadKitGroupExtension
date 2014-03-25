@@ -1569,4 +1569,15 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * @since MadKitGroupExtension 1.4.0
 	 */
 	public List<Message> nextMessages(MessageFilter filter);
+	
+	/**
+	 * Checks if this agent address is still valid. I.e. the corresponding agent is 
+	 * still playing this role. 
+	 * 
+	 * @return <code>true</code> if the address still exists in the organization.
+	 * @since MaDKit 5.0.4
+	 * @since MadKitGroupExtension 1.4
+	 */
+	public boolean checkAgentAddress(final AgentAddress agentAddress);
+	
 }

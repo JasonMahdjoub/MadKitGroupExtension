@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 2, 17);
-	VERSION=new Version("MadKitGroupExtension", 1,4,0, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2014, 2, 25);
+	VERSION=new Version("MadKitGroupExtension", 1,5,0, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -217,10 +217,26 @@ public class MadKitGroupExtension
 	c.set(2012, 5, 8);
 	VERSION.addDeveloper(new PersonDeveloper("mahdjoub", "jason", c.getTime()));
 	
+	c=Calendar.getInstance();
+	c.set(2014, 2, 25);
+	Description d=new Description(1,5,0,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adding function AbstractGroup.intersect(KernelAddress, AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.intersect(AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.union(KernelAddress, AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.union(AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.symmetricDifference(KernelAddress, AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.symmetricDifference(AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.minus(KernelAddress, AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.minus(AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.include(KernelAddress, AbstractGroup)");
+	d.addItem("Adding function AbstractGroup.isEmpty(KernelAddress)");
+	d.addItem("Altering Group.equals(Object). Now it compares also the subgroups.");
+	d.addItem("Altering MultiGroup.getRepresentedGroups(KernelAddress). Order of forbiden groups is now not important.");
+	VERSION.addDescription(d);
 
 	c=Calendar.getInstance();
 	c.set(2014, 2, 17);
-	Description d=new Description(1,4,0,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,4,0,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Updating to MadKit 5.0.4'");
 	VERSION.addDescription(d);
 

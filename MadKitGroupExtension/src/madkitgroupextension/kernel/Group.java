@@ -567,7 +567,7 @@ public final class Group extends AbstractGroup
     }
     public boolean equals(Group _g)
     {
-	return _g==this || this.m_group==_g.m_group;
+	return _g==this || (this.m_group==_g.m_group && this.m_use_sub_groups==_g.m_use_sub_groups);
     }
 
     /**

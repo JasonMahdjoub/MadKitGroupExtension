@@ -27,6 +27,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import madkit.kernel.AgentAddress;
@@ -277,11 +278,11 @@ public final class Group extends AbstractGroup
 	if (m_group.getMadKitIdentifier()!=_theIdentifier)
 	    System.err.println("[GROUP WARNING] The current created group ("+this+") have be declared with an identifier ("+_theIdentifier+") which is not the same than the one declared with the previous same declared groups. So the current created group has the previous declared MadKit identifier ("+m_group.getMadKitIdentifier()+") !");
     }
-    private Group(GroupTree _g)
+    Group(GroupTree _g)
     {
 	this(_g, false, true);
     }
-    private Group(GroupTree _g, boolean _use_sub_groups, boolean increase)
+    Group(GroupTree _g, boolean _use_sub_groups, boolean increase)
     {
 	m_group=_g;
 	m_use_sub_groups=_use_sub_groups;
@@ -492,6 +493,23 @@ public final class Group extends AbstractGroup
 	if (m_use_sub_groups)
 	{
 	    return new Group(m_group, false, true);
+	}
+	else 
+	    return this;
+    }
+    
+    /**
+     * Return the same group, which represents its subgroups
+     * 
+     * @return the same group, which represents its subgroups
+     * @since MadKitGroupExtension 1.0
+     * @see #getRepresentedGroups(KernelAddress)
+     */
+    public Group getThisGroupWithItsSubGroups()
+    {
+	if (!m_use_sub_groups)
+	{
+	    return new Group(m_group, true, true);
 	}
 	else 
 	    return this;
@@ -797,6 +815,90 @@ public final class Group extends AbstractGroup
 	}
     }
     
+    final static class Universe extends AbstractGroup
+    {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4697381152906077266L;
+	
+	@Override
+	public Group[] getRepresentedGroups(KernelAddress _ka)
+	{
+	    if (_ka==null)
+		return new Group[0];
+	    AtomicReference<Group[]> rp=null;
+	    synchronized(represented_groups_universe)
+	    {
+		rp=represented_groups_universe.get(_ka);
+		if (rp==null)
+		{
+		    rp=new AtomicReference<Group[]>(null);
+		    represented_groups_universe.put(_ka, rp);
+		}
+	    }
+	    Group res[]=rp.get();
+	    if (res==null)
+	    {
+		ArrayList<Group> lst=new ArrayList<>(50);
+		synchronized(m_groups_root)
+		{
+		    for (GroupTree gt : m_groups_root)
+		    {
+			for (Group g : gt.getRepresentedGroups(_ka))
+			    lst.add(g);
+		    }
+		}
+		res=new Group[lst.size()];
+		lst.toArray(res);
+		rp.set(res);
+	    }
+	    return res;
+	}
+
+	@Override
+	public AbstractGroup clone()
+	{
+	    return this;
+	}
+	
+	@Override public boolean equals(Object o)
+	{
+	    if (o==this)
+		return true;
+	    if (o==null)
+		return false;
+	    if (o instanceof Universe)
+		return true;
+	    else if (o instanceof MultiGroup)
+		return o.equals(this);
+	    else
+		return false;
+	}
+	
+	@Override public String toString()
+	{
+	    return "UniverseOfGroups";
+	}
+	@Override public int hashCode()
+	{
+	    return 0;
+	}
+    }
+    
+    static final Universe universe=new Universe();
+    static final Map<KernelAddress, AtomicReference<Group[]>> represented_groups_universe=new HashMap<KernelAddress, AtomicReference<Group[]>>();
+    
+    static void resetRepresentedGroupsOfUniverse(KernelAddress ka)
+    {
+	synchronized(represented_groups_universe)
+	{
+	    AtomicReference<Group[]> af=represented_groups_universe.get(ka);
+	    if (af!=null)
+		af.set(null);
+	}
+    }
+    
     static protected final ArrayList<GroupTree> m_groups_root=new ArrayList<GroupTree>();
     
     static protected GroupTree getRoot(String _community)
@@ -950,11 +1052,13 @@ public final class Group extends AbstractGroup
 	    }
 
 	    GroupTree gt=new GroupTree(g, this, _isDistributed, _theIdentifier, (i==_group.length-1)?_isReserved:false);
+	    
 	    GroupTree res;
 	    if (i==_group.length-1)
 		res=gt;
 	    else
 		res=gt.getGroup(_isDistributed, _theIdentifier, i+1, _isReserved, _group);
+	    
 	    addSubGroup(gt);
 	    return res;
 	}
@@ -1131,9 +1235,10 @@ public final class Group extends AbstractGroup
 		_g.m_parent_groups.add(this);
 	    }
 	    GroupTree p=m_parent;
-	    while (p!=null && p.m_parent!=null)
+	    while (p!=null)
 	    {
 		_g.m_parent_groups.add(p);
+		p=p.m_parent;
 	    }
 	    _g.updateDuplicatedParentList();
 	}
@@ -1168,6 +1273,7 @@ public final class Group extends AbstractGroup
 		p.updateDuplicatedSubGroupList(ka);
 		p=p.m_parent;
 	    }
+	    resetRepresentedGroupsOfUniverse(ka);
 	    Group.notifyChangements();
 	}
 	private synchronized void deactivateGroup(KernelAddress ka)
@@ -1185,6 +1291,7 @@ public final class Group extends AbstractGroup
 		p.updateDuplicatedSubGroupList(ka);
 		p=p.m_parent;
 	    }
+	    resetRepresentedGroupsOfUniverse(ka);
 	    Group.notifyChangements();
 	}
 	
@@ -1245,11 +1352,20 @@ public final class Group extends AbstractGroup
 	    }
 	    else
 		--m_references;
-	    
-	    //TODO remove this line code when debugging effective
-	    if (m_references<0)
-		throw new IllegalAccessError("The program shouldn't arrive on this line code. This is a MaKitGroupExtension bug !");
 	}
+	
+	private final AtomicReference<Group> root_group=new AtomicReference<>(null);
+	
+	Group[] getRepresentedGroups(KernelAddress ka)
+	{
+	    Group g=root_group.get();
+	    if (g==null)
+	    {
+		root_group.set(g=new Group(this, true, false));
+	    }
+	    return g.getRepresentedGroups(ka);
+	}
+	
     }
 
     

@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 2, 25);
-	VERSION=new Version("MadKitGroupExtension", 1,5,0, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2014, 3, 7);
+	VERSION=new Version("MadKitGroupExtension", 1,5,1, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -218,8 +218,23 @@ public class MadKitGroupExtension
 	VERSION.addDeveloper(new PersonDeveloper("mahdjoub", "jason", c.getTime()));
 	
 	c=Calendar.getInstance();
+	c.set(2014, 3, 7);
+	Description d=new Description(1,5,1,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adding AbstractGroup.isEmpty()");
+	d.addItem("Correcting a loop problem on the class Group");
+	d.addItem("Now it is possible to create an empty MultiGroup. This correct a bug for set functions.");
+	d.addItem("Removing duplicated groups into the function MultiGroup.getRepresentedGroups(KernelAddress).");
+	d.addItem("Adding function AbstractGroup.getUniverse().");
+	d.addItem("Adding function AbstractGroup.getComplementary().");
+	d.addItem("Adding function AbstractGroup.getComplementary(KernelAddress).");
+	d.addItem("Adding function AbstractGroup.includes(AbstractGroup).");
+	d.addItem("Altering function MultiGroup.equals(AbstractGroup).");
+	d.addItem("Adding function Group.getThisGroupWithoutItsSubGroups().");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2014, 2, 25);
-	Description d=new Description(1,5,0,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,5,0,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Adding function AbstractGroup.intersect(KernelAddress, AbstractGroup)");
 	d.addItem("Adding function AbstractGroup.intersect(AbstractGroup)");
 	d.addItem("Adding function AbstractGroup.union(KernelAddress, AbstractGroup)");

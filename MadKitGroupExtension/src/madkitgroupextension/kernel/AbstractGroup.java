@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import madkit.kernel.KernelAddress;
 import madkitgroupextension.kernel.MultiGroup.AssociatedGroup;
@@ -69,6 +70,9 @@ public abstract class AbstractGroup implements Serializable, Cloneable
     
     @Override public abstract AbstractGroup clone();
     
+    @Override public abstract boolean equals(Object o);
+    
+    @Override public abstract String toString();
     
     /**
      * This function returns the intersection between the represented groups by this group into the given KernelAddress, and those of the given abstract group in parameter. 
@@ -280,9 +284,28 @@ public abstract class AbstractGroup implements Serializable, Cloneable
     {
 	if (ka==null)
 	    throw new NullPointerException("ka");
-	return this.getRepresentedGroups(ka).length>0;
+	return this.getRepresentedGroups(ka).length==0;
     }
 
+    /**
+     * Returns the complementary of the represented groups if this abstract group, considering one specific kernel address.
+     * @param ka the considered kernel address
+     * @return the complementary represented groups : <code>AbstractGroup.getUniverse().minus(this).getRepresentedGroups(ka);</code>
+     * @since MadKitGroupExtension 1.5.1
+     * @see #getRepresentedGroups(KernelAddress)
+     * @see KernelAddress
+     * @see Group
+     * @see MultiGroup
+     * @throws NullPointerException if ka is null
+     */
+    public Group[] getComplementary(KernelAddress ka)
+    {
+	if (ka==null)
+	    throw new NullPointerException("ka");
+	return getUniverse().minus(this).getRepresentedGroups(ka);
+    }
+    
+    
     /**
      * This function returns an AbstractGroup that intersects this group with the given abstract group in parameter.
      * @param _group the group to intersect with
@@ -328,6 +351,10 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 	    {
 		return _group.intersect(this);
 	    }
+	    else if (_group instanceof Group.Universe)
+	    {
+		return this;
+	    }
 	}
 	else if (this instanceof MultiGroup)
 	{
@@ -353,7 +380,7 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 		    for (AbstractGroup ag : AThis)
 		    {
 			AbstractGroup tmp=ag.intersect(group);
-			if (tmp!=null)
+			if (!tmp.isEmpty())
 			{
 			    res.addGroup(tmp);
 			}
@@ -407,7 +434,7 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 			for (AbstractGroup ag : AThis)
 			{
 			    AbstractGroup tmp=ag.intersect(AGroup);
-			    if (tmp!=null)
+			    if (!tmp.isEmpty())
 			    {
 				res.addGroup(tmp);
 			    }
@@ -427,6 +454,14 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 		    }
 		}
 	    }
+	    else if (_group instanceof Group.Universe)
+	    {
+		return this;
+	    }
+	}
+	else if (this instanceof Group.Universe)
+	{
+	    return _group;
 	}
 	return new MultiGroup();
     }
@@ -443,8 +478,11 @@ public abstract class AbstractGroup implements Serializable, Cloneable
     {
 	if (_group==null || _group==this)
 	    return this;
+	if (_group instanceof Group.Universe)
+	    return _group;
+	if (this instanceof Group.Universe)
+	    return this;
 	MultiGroup res=new MultiGroup();
-
 	res.addGroup(_group);
 	res.addGroup(this);
 	return res;
@@ -462,7 +500,7 @@ public abstract class AbstractGroup implements Serializable, Cloneable
     {
 	if (_group==null)
 	    return this;
-	if (_group==this)
+	if (_group==this || this instanceof Group.Universe || _group instanceof Group.Universe)
 	    return new MultiGroup();
 	
 	AbstractGroup union=this.union(_group);
@@ -470,20 +508,670 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 	return union.minus(intersection);
     }
     
-    boolean isPerhapsEmpty()
+    boolean isEmptyForSure()
     {
 	if (this instanceof Group)
 	    return false;
 	else if (this instanceof MultiGroup)
 	{
-	    for (AssociatedGroup ag : ((MultiGroup)this).m_groups)
+	    synchronized(this)
 	    {
-		if (!ag.m_forbiden)
-		    return false;
+		for (AssociatedGroup ag : ((MultiGroup)this).m_groups)
+		{
+		    if (ag.m_forbiden && ag.m_group instanceof Group.Universe)
+			return true;
+		    else if (!ag.m_forbiden && !ag.m_group.isEmptyForSure())
+		    {
+			return false;
+		    }
+		}
+		return true;
 	    }
-	    return true;
 	}
+	else if (this instanceof Group.Universe)
+	    return false;
 	return false;
+    }
+    
+    /**
+     * Returns true if this AbstractGroup is empty.
+     * 
+     * @return true if this AbstractGroup is empty
+     * @since MadKitGroupExtension 1.5.1
+     */
+    public boolean isEmpty()
+    {
+	if (this instanceof Group.Universe)
+	    return false;
+	if (isEmptyForSure())
+	    return true;
+	else 
+	{
+	    ArrayList<Group> groups=notCompletelyExcludedGroups();
+	    if (groups==null)
+		return false;
+	    else
+		return groups.size()==0;
+	}
+    }
+    
+    ArrayList<Group> notCompletelyExcludedGroups()
+    {
+	ArrayList<Group> res=new ArrayList<>();
+	if (this instanceof MultiGroup)
+	{
+	    synchronized(this)
+	    {
+		MultiGroup This=(MultiGroup)this;
+		boolean represent_universe=false;
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (!ag.m_forbiden)
+		    {
+		    
+			ArrayList<Group> tmp=ag.m_group.notCompletelyExcludedGroups();
+			if (tmp==null)
+			{
+			    represent_universe=true;
+			    break;
+			}
+			for (Group g : tmp)
+			{
+			    Iterator<Group> it=res.iterator();
+			    boolean global_add=true;
+			    while (it.hasNext())
+			    {
+				Group g2=it.next();
+				boolean toremove=false;
+				boolean toadd=false;
+				if (g.getCommunity().equals(g2.getCommunity()))
+				{
+				    if (g.getPath().equals(g2.getPath()))
+				    {
+					if (!g2.isUsedSubGroups() && g.isUsedSubGroups())
+					{
+					    toremove=true;
+					    toadd=true;
+					}
+				    }
+				    else if (g.getPath().startsWith(g2.getPath()))
+				    {
+					if (!g2.isUsedSubGroups())
+				    	{
+					    toadd=true;
+				    	}
+				    }
+				    else if (g2.getPath().startsWith(g.getPath()))
+				    {
+					if (g.isUsedSubGroups())
+					{
+					    toremove=true;
+					}
+					toadd=true;
+				    }
+				    else
+				    {
+					toadd=true;
+				    }
+				}
+				else
+				    toadd=true;
+				if (toremove)
+				    it.remove();
+				global_add=global_add&toadd;
+			    }
+			    if (global_add)
+				res.add(g);
+			}
+		    }
+		}
+	    
+		Groups eliminated=new Groups();
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (ag.m_forbiden)
+		    {
+			if (represent_universe)
+			{
+			    if (ag.m_group instanceof Group.Universe)
+				return new ArrayList<>();
+			}
+			else
+			    eliminated.mergeWithEliminated(ag.m_group.getEliminated(res)); 
+		    }
+		}
+		if (represent_universe)
+		    return null;
+
+		res=eliminated.eliminates(res);
+	    }
+	}
+	else if (this instanceof Group)
+	{
+	    res.add((Group)this);
+	}
+	else if (this instanceof Group.Universe)
+	    return null;
+	return res;
+    }
+    
+    Groups getEliminated(ArrayList<Group> groups)
+    {
+	if (this instanceof MultiGroup)
+	{
+	    synchronized(this)
+	    {
+		MultiGroup This=(MultiGroup)this;
+		Groups res_gprs=new Groups();
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (!ag.m_forbiden)
+		    {
+			Groups grps=ag.m_group.getEliminated(groups);
+			res_gprs.mergeWithEliminated(grps);
+		    }
+		}
+		@SuppressWarnings("unchecked")
+		ArrayList<Group> eliminated=(ArrayList<Group>)res_gprs.getEliminatedGroups().clone();
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (ag.m_forbiden)
+		    {
+			Groups grps=ag.m_group.getSurvivors(eliminated);
+
+			res_gprs.mergeWithSurvivors(grps);
+		    }
+		}
+		return res_gprs;
+	    }
+	}
+	else if (this instanceof Group)
+	{
+	    
+	    Group This=(Group)this;
+	    Iterator<Group> it=groups.iterator();
+	    Groups res=new Groups();
+	    while (it.hasNext())
+	    {
+		Group g=it.next();
+		boolean toremove=false;
+		if (This.getCommunity().equals(g.getCommunity()))
+		{
+		    if (This.getPath().equals(g.getPath()))
+		    {
+			if (!g.isUsedSubGroups())
+			    toremove=true;
+			else if (This.isUsedSubGroups())
+			    toremove=true;
+		    }
+		    else if (g.getPath().startsWith(This.getPath()))
+		    {
+			
+			if (This.isUsedSubGroups())
+			    toremove=true;
+		    }
+		}
+		if (toremove)
+		    res.addEliminatedGroup(g, null);
+	    }
+	    return res;
+	}
+	else if (this instanceof Group.Universe)
+	{
+	    Groups res=new Groups();
+	    for (Group g : groups)
+		res.addEliminatedGroup(g, null);
+	    return res;
+	}
+	return null;
+    }
+    
+    static class Groups
+    {
+	private ArrayList<Group> groups_eliminated=new ArrayList<>();
+	private ArrayList<Group> groups_generated=new ArrayList<>();
+	
+	public ArrayList<Group> getEliminatedGroups()
+	{
+	    return groups_eliminated;
+	}
+	
+	public ArrayList<Group> getGeneratedGroups()
+	{
+	    return groups_generated;
+	}
+	
+	public void addEliminatedGroup(Group _group, Group _replaced_group)
+	{
+	    groups_eliminated.add(_group);
+	    
+	    if (_replaced_group!=null)
+	    {
+		addGeneratedGroup(_replaced_group);
+	    }
+	}
+	
+	void addGeneratedGroup(Group _group)
+	{
+	    Iterator<Group> it=groups_generated.iterator();
+	    boolean add=true;
+	    while (it.hasNext())
+	    {
+		Group g=it.next();
+		
+		if (g.getCommunity().equals(_group.getCommunity()))
+		{
+		    if (g.getPath().equals(_group.getPath()))
+		    {
+			if (!g.isUsedSubGroups() && _group.isUsedSubGroups())
+			{
+			    it.remove();
+			    add=true;
+			}
+			else
+			{
+			    add=false;
+			}
+		    }
+		    else if (g.getPath().startsWith(_group.getPath()))
+		    {
+			if (_group.isUsedSubGroups())
+			{
+			    it.remove();
+			    add=true;
+			}
+			else
+			{
+			    add=true;
+			}
+		    }
+		    else if (_group.getPath().startsWith(g.getPath()))
+		    {
+			if (g.isUsedSubGroups())
+			{
+			    add=false;
+			}
+			else
+			{
+			    add=true;
+			}
+		    }
+		    else
+			add=true;
+		}
+		else
+		    add=true;
+	    }
+	    if (add)
+		groups_generated.add(_group);
+	}
+	
+	public void mergeWithSurvivors(Groups _groups)
+	{
+	    ArrayList<Group> grps_eliminated=new ArrayList<>();
+	    ArrayList<Group> grps_not_eliminated=new ArrayList<>();
+	    ArrayList<Group> grps_generated=new ArrayList<>();
+	    grps_generated.addAll(_groups.groups_generated);
+	    grps_generated.addAll(groups_generated);
+	    
+	    for (Group g : _groups.groups_eliminated)
+	    {
+		if (groups_eliminated.remove(g))
+		{
+		    grps_eliminated.add(g);
+		}
+		else
+		{
+		    grps_not_eliminated.add(g);
+		    if (g.isUsedSubGroups())
+		    {
+			Iterator<Group> it=grps_generated.iterator();
+			while (it.hasNext())
+			{
+			    Group g2=it.next();
+			    if (g2.getCommunity().equals(g.getCommunity()))
+			    {
+				if (g2.getPath().startsWith(g.getPath()))
+				    it.remove();
+			    }
+			}
+		    }
+		}
+	    }
+	    for (Group g : groups_eliminated)
+	    {
+		grps_not_eliminated.add(g);
+		if (g.isUsedSubGroups())
+		{
+		    Iterator<Group> it=grps_generated.iterator();
+		    while (it.hasNext())
+		    {
+			Group g2=it.next();
+			if (g2.getCommunity().equals(g.getCommunity()))
+			{
+			    if (g2.getPath().startsWith(g.getPath()))
+				it.remove();
+			}
+		    }
+		}
+	    }
+	    groups_eliminated=grps_eliminated;
+	    groups_generated=new ArrayList<>();
+	    for (Group g : grps_generated)
+		addGeneratedGroup(g);
+	}
+	
+	public void mergeWithEliminated(Groups _groups)
+	{
+	    ArrayList<Group> generated=new ArrayList<>(_groups.groups_generated.size()+groups_generated.size());
+	    intersectForGenerated(groups_generated, _groups.groups_eliminated, _groups.groups_generated, generated);
+	    intersectForGenerated(_groups.groups_generated, groups_eliminated, groups_generated, generated);
+	    
+	    groups_generated=new ArrayList<>();
+	    for (Group g : generated)
+		addGeneratedGroup(g);
+	    
+	    for (Group g : _groups.groups_eliminated)
+	    {
+		if (!groups_eliminated.contains(g))
+		    groups_eliminated.add(g);
+	    }
+	}
+	
+	public ArrayList<Group> eliminates(ArrayList<Group> groups)
+	{
+	    ArrayList<Group> res=new ArrayList<Group>(groups.size());
+	    for (Group g : groups)
+	    {
+		boolean eliminated=false;
+		for (Group g2 : groups_eliminated)
+		{
+		    if (g2==g || 
+			    (g.getCommunity().equals(g2.getCommunity()) && 
+				    ((g.getPath().equals(g2.getPath()) && (g2.isUsedSubGroups() || g2.isUsedSubGroups()==g.isUsedSubGroups())) ||
+					    (g.getPath().startsWith(g2.getPath()) && g2.isUsedSubGroups())
+					    )
+			    )
+			)
+		    {
+			eliminated=true;
+			break;
+		    }
+		}
+		/*if (eliminated)
+		{
+		    for (Group g2 : groups_generated)
+		    {
+			    if (g2==g || 
+				    (g.getCommunity().equals(g2.getCommunity()) && 
+					    ((g.getPath().equals(g2.getPath()) && (g2.isUsedSubGroups() || g2.isUsedSubGroups()==g.isUsedSubGroups())) ||
+						    (g.getPath().startsWith(g2.getPath()) && g2.isUsedSubGroups())
+						    )
+				    )
+				)
+			    {
+				eliminated=false;
+				break;
+			    }
+		    }
+		}*/
+		if (!eliminated)
+		    res.add(g);
+	    }
+	    res.addAll(groups_generated);
+	    return res;
+	}
+	
+	static void intersectForGenerated(ArrayList<Group> groups_generated, ArrayList<Group> other_eliminated, ArrayList<Group> other_generated, ArrayList<Group> generated)
+	{
+	    for (Group g : groups_generated)
+	    {
+		boolean eliminated_on_other=false;
+		for (Group g2 : other_eliminated)
+		{
+		    if (g2.getCommunity().equals(g.getCommunity()))
+		    {
+			if (g2.getPath().equals(g.getPath()))
+			{
+			    if (g2.isUsedSubGroups() || g2.isUsedSubGroups()==g.isUsedSubGroups())
+			    {
+				eliminated_on_other=true;
+				break;
+			    }
+			}
+			else if (g2.isUsedSubGroups())
+			{
+			    if (g.getPath().startsWith(g2.getPath()))
+			    {
+				eliminated_on_other=true;
+				break;
+			    }
+			}
+		    }
+		}
+		if (eliminated_on_other)
+		{
+		    for (Group g2 : other_generated)
+		    {
+			if (g2.getCommunity().equals(g.getCommunity()))
+			{
+			    if (g2.getPath().equals(g.getPath()))
+			    {
+				if (g.isUsedSubGroups()==g2.isUsedSubGroups() || !g.isUsedSubGroups())
+				{
+				    eliminated_on_other=false;
+				    break;
+				}
+			    }
+			    else if (g.getPath().startsWith(g2.getPath()))
+			    {
+				if (!g2.isUsedSubGroups())
+				{
+				    eliminated_on_other=false;
+				    break;
+				}
+			    }
+			}
+		    }
+		}
+		if (!eliminated_on_other)
+		    generated.add(g);
+	    }
+	    
+	}
+	
+	public ArrayList<Group> getNotEliminated(ArrayList<Group> authorized)
+	{
+	    ArrayList<Group> res=new ArrayList<>(authorized.size());
+	    for (Group g : authorized)
+	    {
+		boolean add=true;
+		for (Group g2 : groups_eliminated)
+		{
+		    if (g.getCommunity().equals(g2.getCommunity()))
+		    {
+			if (g.getPath().equals(g2.getPath()))
+			{
+			    if (g2.isUsedSubGroups() || g.isUsedSubGroups()==g2.isUsedSubGroups())
+				add=false;
+			}
+			else if (g.getPath().startsWith(g2.getPath()) && g2.isUsedSubGroups())
+			{
+			    add=false;
+			}
+		    }
+		    if (!add)
+			break;
+		}
+		if (add)
+		    res.add(g);
+	    }
+	    res.addAll(groups_generated);
+	    return res;
+	}
+	
+	private void addEliminatedGroup(Group g)
+	{
+	    this.groups_eliminated.add(g);
+	    Iterator<Group> it=this.groups_generated.iterator();
+	    while (it.hasNext())
+	    {
+		Group g2=it.next();
+		if (g2.getCommunity().equals(g.getCommunity()))
+		{
+		    if (g2.getPath().equals(g.getPath()) ||
+			    (g2.getPath().startsWith(g.getPath()) && g.isUsedSubGroups()))
+			it.remove();
+		}
+	    }
+	}
+	
+	public void mergeWithEliminatedSurvivors(ArrayList<Group> eliminated, Groups eliminated_survivors)
+	{
+	    for (Group g : eliminated)
+	    {
+		boolean add=true;
+		for (Group g2 : eliminated_survivors.groups_eliminated)
+		{
+		    if (g.equals(g2))
+		    {
+			add=false;
+			break;
+		    }
+		}
+		if (add)
+		{
+		    addEliminatedGroup(g);
+		}
+	    }
+	    for (Group g : eliminated_survivors.groups_generated)
+	    {
+		boolean add=true;
+		Iterator<Group> it=groups_eliminated.iterator();
+		while (it.hasNext())
+		{
+		    Group g2=it.next();
+		    if (g2.getCommunity().equals(g.getCommunity()))
+		    {
+			if (g2.getPath().equals(g.getPath()))
+			{
+			    if (!g.isUsedSubGroups())
+				add=false;
+			    else if (!g2.isUsedSubGroups())
+			    {
+				it.remove();
+			    }
+			}
+			else if (g2.isUsedSubGroups() && g.getPath().startsWith(g2.getPath()))
+			{
+			    add=false;
+			}
+			else if (g.isUsedSubGroups() && g2.getPath().startsWith(g.getPath()))
+			{
+			    it.remove();
+			}
+		    }
+		}
+		if (add)
+		{
+		    addEliminatedGroup(g);
+		}
+	    }
+	}
+    }
+    
+    Groups getSurvivors(ArrayList<Group> groups)
+    {
+	if (this instanceof MultiGroup)
+	{
+	    synchronized(this)
+	    {
+		MultiGroup This=(MultiGroup)this;
+		Groups res=new Groups();
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (!ag.m_forbiden)
+		    {
+			Groups grps=ag.m_group.getSurvivors(groups);
+			res.mergeWithSurvivors(grps);
+		    }
+		}
+		ArrayList<Group> eliminated=new ArrayList<>();
+	    
+		for (Group g : groups)
+		{
+		    boolean found=false;
+		    for (Group g2 : res.getEliminatedGroups())
+		    {
+			if (g.equals(g2))
+			{
+			    found=true;
+			    break;
+			}
+		    }
+		    if (!found)
+			eliminated.add(g);
+		}
+		Groups res_eliminated=new Groups();
+	    
+		for (AssociatedGroup ag : This.m_groups)
+		{
+		    if (ag.m_forbiden)
+		    {
+			Groups grps=ag.m_group.getSurvivors(eliminated);
+			res_eliminated.mergeWithSurvivors(grps);
+		    }
+		}
+		res.mergeWithEliminatedSurvivors(eliminated, res_eliminated);
+		return res;
+	    }
+	}
+	else if (this instanceof Group)
+	{
+	    Groups res=new Groups();
+	    Group This=(Group)this;
+	    
+	    for (Group g : groups)
+	    {
+		Group generated=null;
+		boolean toremove=false;
+		if (This.getCommunity().equals(g.getCommunity()))
+		{
+		    if (This.getPath().equals(g.getPath()))
+		    {
+			if (This.isUsedSubGroups())
+			{
+			    toremove=true;
+			}
+			else
+			{
+			    if (!g.isUsedSubGroups())
+			    {
+				toremove=true;
+			    }
+			}
+		    }
+		    else if (g.getPath().startsWith(This.getPath()))
+		    {
+			if (This.isUsedSubGroups())
+			    toremove=true;
+		    }
+		    else if (This.getPath().startsWith(g.getPath()))
+		    {
+			if (g.isUsedSubGroups())
+			    generated=This;
+		    }
+		}
+		if (!toremove)
+		    res.addEliminatedGroup(g, generated);
+	    }
+	    return res;
+	}
+	else if (this instanceof Group.Universe)
+	{
+	    return new Groups();
+	}
+	return null;
     }
     
     /**
@@ -500,12 +1188,12 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 	    return this;
 	if (this==_group)
 	    return new MultiGroup();
-	if (this instanceof MultiGroup)
+	/*if (this instanceof MultiGroup)
 	{
 	    ((MultiGroup)this).addForbidenGroup(_group);
 	    return this;
 	}
-	else
+	else*/
 	{
 	    MultiGroup res=new MultiGroup();
 	    res.addGroup(this);
@@ -513,6 +1201,42 @@ public abstract class AbstractGroup implements Serializable, Cloneable
 	    return res;
 	}
     }
+    
+    /**
+     * Returns the complementary of this group.
+     * @return the complementary of this group : <code>AbstractGroup.getUniverse().minus(this);</code>
+     * @since MadKitGroupExtension 1.5.1
+     */
+    public AbstractGroup getComplementary()
+    {
+	return getUniverse().minus(this);
+    }
+    
+    /**
+     * Returns true if this abstract group includes the given abstract group as parameter
+     * @param _group 
+     * @return true if this abstract group includes the given abstract group as parameter
+     * @since MadKitGroupExtension 1.5.1 
+     */
+    public boolean includes(AbstractGroup _group)
+    {
+	if (_group==null)
+	    return true;
+	if (_group==this)
+	    return true;
+	return _group.minus(this).isEmpty();
+    }
+    
+    
+    /**
+     * Returns a group which represents all groups of all communities. 
+     * @return a group which represents all groups of all communities.
+     */
+    public static AbstractGroup getUniverse()
+    {
+	return Group.universe;
+    }
+    
     
     
 }

@@ -452,49 +452,84 @@ public class Export
 	return "lib/madkit-5.0.0.16.jar";
     }*/
     
-    public static void updateFTP(FTPClient ftpClient, String _directory_dst, File _directory_src) throws IOException
+    public static void updateFTP(FTPClient ftpClient, String _directory_dst, File _directory_src, File _current_file_transfert, File _current_directory_transfert) throws IOException, TransfertException
+    {
+	if (_current_directory_transfert==null || _directory_src.equals(_current_directory_transfert))
+	{
+	    try
+	    {
+		updateFTP(ftpClient, _directory_dst, _directory_src, _current_file_transfert);
+	    }
+	    catch(TransfertException e)
+	    {
+		e.current_directory_transfert=_directory_src;
+		throw e;
+	    }
+	}
+    }
+    
+    public static void updateFTP(FTPClient ftpClient, String _directory_dst, File _directory_src, File _current_file_transfert) throws IOException, TransfertException
     {
 	ftpClient.changeWorkingDirectory("./");
 	FTPListParseEngine ftplpe=ftpClient.initiateListParsing(_directory_dst);
 	FTPFile files[]=ftplpe.getFiles();
 	
-	for (File f : _directory_src.listFiles())
+	File current_file_transfert=_current_file_transfert;
+	
+	try
 	{
-	    if (f.isDirectory())
+	    for (File f : _directory_src.listFiles())
 	    {
-		if (!f.getName().equals("./") && !f.getName().equals("../"))
+		if (f.isDirectory())
 		{
-		    boolean found=false;
+		    if (!f.getName().equals("./") && !f.getName().equals("../"))
+		    {
+			if (_current_file_transfert!=null)
+			{
+			    if (!_current_file_transfert.getCanonicalPath().startsWith(f.getCanonicalPath()))
+				continue;
+			    else
+				_current_file_transfert=null;
+			}
+			boolean found=false;
+			for (FTPFile ff : files)
+			{
+			    if (f.getName().equals(ff.getName()))
+			    {	
+				if (ff.isFile())
+				{ 
+				    ftpClient.deleteFile(_directory_dst+ff.getName());
+				}
+				else
+				    found=true;
+				break;
+			    }
+			}
+		
+			if (!found)
+			{
+			    ftpClient.changeWorkingDirectory("./");
+			    if (!ftpClient.makeDirectory(_directory_dst+f.getName()+"/"))
+				System.err.println("Impossible to create directory "+_directory_dst+f.getName()+"/");
+			}
+			updateFTP(ftpClient, _directory_dst+f.getName()+"/", f, _current_file_transfert);
+		    }
+		}
+		else
+		{
+		    if (_current_file_transfert!=null)
+		    {
+			if (!_current_file_transfert.equals(f.getCanonicalPath()))
+			    continue;
+			else
+			    _current_file_transfert=null;
+		    }
+		    current_file_transfert=_current_file_transfert;
+		    FTPFile found=null;
 		    for (FTPFile ff : files)
 		    {
 			if (f.getName().equals(ff.getName()))
 			{
-			    if (ff.isFile())
-			    { 
-				ftpClient.deleteFile(_directory_dst+ff.getName());
-			    }
-			    else
-				found=true;
-			    break;
-			}
-		    }
-		
-		    if (!found)
-		    {
-			ftpClient.changeWorkingDirectory("./");
-			if (!ftpClient.makeDirectory(_directory_dst+f.getName()+"/"))
-			    System.err.println("Impossible to create directory "+_directory_dst+f.getName()+"/");
-		    }
-		    updateFTP(ftpClient, _directory_dst+f.getName()+"/", f);
-		}
-	    }
-	    else
-	    {
-		FTPFile found=null;
-		for (FTPFile ff : files)
-		{
-		    if (f.getName().equals(ff.getName()))
-		    {
 			    if (ff.isDirectory())
 			    {
 				FileTools.removeDirectory(ftpClient, _directory_dst+ff.getName());
@@ -502,27 +537,31 @@ public class Export
 			    else
 				found=ff;
 			    break;
+			}
 		    }
-		}
-		if (found==null || (found.getTimestamp().getTimeInMillis()-f.lastModified())<0 || found.getSize()!=f.length())
-		{
-		    FileInputStream fis=new FileInputStream(f);
-		    ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-		    if (!ftpClient.storeFile(_directory_dst+f.getName(), fis))
-			System.err.println("Impossible to send file: "+_directory_dst+f.getName());
-		    //ftpClient.setModificationTime(_directory_dst+f.getName(), new SimpleDateFormat("YYYYMMDDhhmmss").format(new Date(f.lastModified())));
-		    fis.close();
-		    for (FTPFile ff : ftplpe.getFiles())
+		    if (found==null || (found.getTimestamp().getTimeInMillis()-f.lastModified())<0 || found.getSize()!=f.length())
 		    {
-			if (f.getName().equals(ff.getName()))
+			FileInputStream fis=new FileInputStream(f);
+			ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+			if (!ftpClient.storeFile(_directory_dst+f.getName(), fis))
+			    System.err.println("Impossible to send file: "+_directory_dst+f.getName());
+			fis.close();
+			for (FTPFile ff : ftplpe.getFiles())
 			{
-			    f.setLastModified(ff.getTimestamp().getTimeInMillis());
-			    break;
+			    if (f.getName().equals(ff.getName()))
+			    {
+				f.setLastModified(ff.getTimestamp().getTimeInMillis());
+				break;
+			    }
 			}
 		    }
 		}
+		
 	    }
-	    
+	}
+	catch(IOException e)
+	{
+	    throw new TransfertException(current_file_transfert, null, e);
 	}
 	for (FTPFile ff : files)
 	{
@@ -560,99 +599,134 @@ public class Export
 	int l=System.in.read(b);
 	String pwd=new String(b, 0, l);
 	
-	FTPClient ftpClient=new FTPClient();
-	ftpClient.connect(FTPURL, 21);
+	boolean reconnect=true;
+	long time=System.currentTimeMillis();
+	File current_file_transfert=null;
+	File current_directory_transfert=null;
 	
-	if (ftpClient.isConnected())
+	while (reconnect)
 	{
-	    System.out.println("Connected to server "+FTPURL+" (Port: "+FTPPORT+") !");
-	    if(ftpClient.login(FTPLOGIN, pwd))
+	    FTPClient ftpClient=new FTPClient();
+	    ftpClient.connect(FTPURL, 21);
+	    try
 	    {
-		System.out.println("Logged as "+FTPLOGIN+" !");
-		System.out.print("Updating...");
-		ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
+		if (ftpClient.isConnected())
+		{
+		    System.out.println("Connected to server "+FTPURL+" (Port: "+FTPPORT+") !");
+		    if(ftpClient.login(FTPLOGIN, pwd))
+		    {
+			ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
+			System.out.println("Logged as "+FTPLOGIN+" !");
+			System.out.print("Updating...");
+		    
 		
-		//FTPListParseEngine ftplpe=ftpClient.initiateListParsing("");
-		FTPFile files[]=ftpClient.listFiles("");
-		FTPFile downloadroot=null;
-		FTPFile docroot=null;
+			FTPFile files[]=ftpClient.listFiles("");
+			FTPFile downloadroot=null;
+			FTPFile docroot=null;
 		
-		for (FTPFile f : files)
-		{
-		    if (f.getName().equals("downloads"))
-		    {
-			downloadroot=f;
-			if (docroot!=null)
-			    break;
-		    }
-		    if (f.getName().equals("doc"))
-		    {
-			docroot=f;
-			if (downloadroot!=null)
-			    break;
-		    }
-		}
-		if (downloadroot==null)
-		{
-		    //ftpClient.changeWorkingDirectory("/");
-		    if (!ftpClient.makeDirectory("downloads"))
-		    {
-			System.err.println("Impossible to create directory: downloads");
-		    }
-		}
-		if (docroot==null)
-		{
-		    //ftpClient.changeWorkingDirectory("/");
-		    if (!ftpClient.makeDirectory("doc"))
-		    {
-			System.err.println("Impossible to create directory: doc");
-		    }
-		}
+			for (FTPFile f : files)
+			{
+			    if (f.getName().equals("downloads"))
+			    {
+				downloadroot=f;
+				if (docroot!=null)
+				    break;
+			    }
+			    if (f.getName().equals("doc"))
+			    {
+				docroot=f;
+				if (downloadroot!=null)
+				    break;
+			    }
+			}
+			if (downloadroot==null)
+			{
+			    //ftpClient.changeWorkingDirectory("/");
+			    if (!ftpClient.makeDirectory("downloads"))
+			    {
+				System.err.println("Impossible to create directory: downloads");
+			    }
+			}
+			if (docroot==null)
+			{
+			    //ftpClient.changeWorkingDirectory("/");
+			    if (!ftpClient.makeDirectory("doc"))
+			    {
+				System.err.println("Impossible to create directory: doc");
+			    }
+			}
 		
-		updateFTP(ftpClient, "downloads/", new File(ExportPathFinal));
-		updateFTP(ftpClient, "doc/", new File("./doc"));
-
-		System.out.println("[OK]");
-		if (ftpClient.logout())
-		{
-		    System.out.println("Logged out from "+FTPLOGIN+" succesfull !");		    
+			updateFTP(ftpClient, "downloads/", new File(ExportPathFinal), current_file_transfert, current_directory_transfert);
+			updateFTP(ftpClient, "doc/", new File("./doc"), current_file_transfert, current_directory_transfert);
+			reconnect=false;
+			
+			System.out.println("[OK]");
+			if (ftpClient.logout())
+			{
+			    System.out.println("Logged out from "+FTPLOGIN+" succesfull !");		    
+			}
+			else
+			    System.err.println("Logged out from "+FTPLOGIN+" FAILED !");
+		    }	
+		    else
+			System.err.println("Impossible to log as "+FTPLOGIN+" !");
+	    
+	    
+		    ftpClient.disconnect();
+		    System.out.println("Disconnected from "+FTPURL+" !");
 		}
 		else
-		    System.err.println("Logged out from "+FTPLOGIN+" FAILED !");
-		
+		{
+		    System.err.println("Impossible to get a connection to the server "+FTPURL+" !");
+		}
+		reconnect=false;
 	    }
-	    else
-		System.err.println("Impossible to log as "+FTPLOGIN+" !");
-	    
-	    
-	    ftpClient.disconnect();
-	    System.out.println("Disconnected from "+FTPURL+" !");
+	    catch(TransfertException e)
+	    {
+		if (System.currentTimeMillis()-time>30000)
+		{
+		    System.err.println("A problem occured during the transfert...");
+		    System.out.println("Reconnection in progress...");
+		    try
+		    {
+			ftpClient.disconnect();
+		    }
+		    catch(Exception e2)
+		    {
+		    }
+		    current_file_transfert=e.current_file_transfert;
+		    current_directory_transfert=e.current_directory_transfert;
+		    time=System.currentTimeMillis();
+		}
+		else
+		{
+		    System.err.println("A problem occured during the transfert. Transfert aborded.");
+		    throw e.original_exception;
+		}
+	    }
 	}
-	else
-	{
-	    System.err.println("Impossible to get a connection to the server "+FTPURL+" !");
-	}
-	
-	/*URL url=new URL("ftp://"+FTPLOGIN+":"+pwd+"@"+FTPURL+":"+FTPPORT+"/");
-	URLConnection connection=url.openConnection();
-	System.out.println(connection.getContent());*/
     }
-    
     public static void main(String args[]) throws NumberFormatException, IllegalAccessException, IOException, Exception
     {
-	new Export(true, true, false).process();
-	new Export(true, false, false).process();
-	new Export(false, true, false).process();
-	new Export(false, false, false).process();
-	Export e=new Export(true, true, true);
-	e.process();
-	FileTools.copy(new File(e.getExportFinal(), e.getJarFileName()).getAbsolutePath(), new File("madkitgroupextension.jar").getAbsolutePath());
-	new Export(false, true, true).process();
-	new Export(true, false, true).process();
-	new Export(false, false, true).process();
-	saveAndIncrementBuild();
-	System.out.println("\n**************************\n\nUpdating Web site ? (y[es]|n[o])");
 	byte b[]=new byte[100];
+	System.out.println("\n**************************\n\nCompiling new package ? (y[es]|n[o])");
+	System.in.read(b);
+	if (b[0]=='y' || b[0]=='Y')
+	{
+	    new Export(true, true, false).process();
+	    new Export(true, false, false).process();
+	    new Export(false, true, false).process();
+	    new Export(false, false, false).process();
+	    Export e=new Export(true, true, true);
+	    e.process();
+	    FileTools.copy(new File(e.getExportFinal(), e.getJarFileName()).getAbsolutePath(), new File("madkitgroupextension.jar").getAbsolutePath());
+	    new Export(false, true, true).process();
+	    new Export(true, false, true).process();
+	    new Export(false, false, true).process();
+	    saveAndIncrementBuild();
+	}
+	System.out.println("\n**************************\n\nUpdating Web site ? (y[es]|n[o])");
+	
 	System.in.read(b);
 	if (b[0]=='y' || b[0]=='Y')
 	{

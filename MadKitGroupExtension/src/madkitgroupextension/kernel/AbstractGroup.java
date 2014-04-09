@@ -241,7 +241,7 @@ public abstract class AbstractGroup implements Serializable, Cloneable
      * @see MultiGroup
      * @throws NullPointerException if ka is null
      */
-    public boolean include(KernelAddress ka, AbstractGroup _group)
+    public boolean includes(KernelAddress ka, AbstractGroup _group)
     {
 	if (ka==null)
 	    throw new NullPointerException("ka");

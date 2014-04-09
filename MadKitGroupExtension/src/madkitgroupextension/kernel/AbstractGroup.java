@@ -43,6 +43,7 @@ import madkitgroupextension.kernel.MultiGroup.AssociatedGroup;
  * @since MadKitGroupExtension 1.0
  * @see Group
  * @see MultiGroup
+ * @see AbstractGroup#getUniverse()
  */
 public abstract class AbstractGroup implements Serializable, Cloneable
 {

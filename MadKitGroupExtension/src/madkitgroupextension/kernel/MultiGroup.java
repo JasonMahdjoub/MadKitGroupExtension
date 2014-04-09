@@ -54,7 +54,8 @@ import madkit.kernel.KernelAddress;
  * @version 1.0
  * @since MadKitGroupExtension 1.0
  * @see AbstractGroup
- * @see MultiGroup
+ * @see Group
+ * @see AbstractGroup#getUniverse()
  */
 public class MultiGroup extends AbstractGroup
 {
@@ -183,11 +184,14 @@ public class MultiGroup extends AbstractGroup
     }*/
     
     /**
-     * Add a new group ({@link Group} or {@link MultiGroup}) which will be combined with the current MultiGroup.
+     * Add a new group ({@link Group} or {@link MultiGroup} or Universe (see {@link AbstractGroup#getUniverse()})) which will be combined with the current MultiGroup.
      * @param _g the abstract group to add.
      * @return false if the group has been already added. 
      * @see Group
+     * @see MultiGroup
+     * @see AbstractGroup#getUniverse()
      * @since MadKitGroupExtension 1.0
+     * 
      */
     public boolean addGroup(AbstractGroup _g)
     {
@@ -231,10 +235,12 @@ public class MultiGroup extends AbstractGroup
 	}
     }
     /**
-     * Add a new forbidden group ({@link Group} or {@link MultiGroup}) which will forbid the representation of itself onto the current MultiGroup (see the class description).
+     * Add a new forbidden group ({@link Group} or {@link MultiGroup} or Universe (see {@link AbstractGroup#getUniverse()})) which will forbid the representation of itself onto the current MultiGroup (see the class description).
      * @param _g the group to forbid.
      * @return false if the group has been already added.
      * @see Group
+     * @see MultiGroup
+     * @see AbstractGroup#getUniverse()
      * @since MadKitGroupExtension 1.0
      */
     public boolean addForbidenGroup(AbstractGroup _g)

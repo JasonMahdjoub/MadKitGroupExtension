@@ -53,7 +53,6 @@ import madkit.kernel.Gatekeeper;
 import madkit.kernel.KernelAddress;
 import madkit.kernel.MadkitClassLoader;
 import madkit.kernel.Message;
-import madkit.kernel.AbstractAgent.ReturnCode;
 import madkit.util.XMLUtilities;
 
 
@@ -75,11 +74,6 @@ import madkit.util.XMLUtilities;
 */
 public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 {
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -6085191901700460376L;
 
     private final ArrayList<Probe<?>> m_probes=new ArrayList<Probe<?>>();
     
@@ -247,7 +241,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
     
     /**
      * Remove role from automatically requested roles.
-     * @param role
+     * @param role the role name
      * @see #autoRequestRole(AbstractGroup, String, Object)
      */
     public void removeAutoRequestedRole(String role)
@@ -356,7 +350,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 		{
 		    AbstractGroupRole agr=it.next();
 		    
-		    if (agr.equals(_group))
+		    if (agr.group.equals(_group))
 		    {
 			it.remove();
 			oneremoved=true;
@@ -413,8 +407,8 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * 
 	 * Tells if the agent is currently playing a specific role.
 	 * 
-	 * @param _group
-	 * @param role
+	 * @param _group the group
+	 * @param role the role name
 	 * @return <code>true</code> if the agent is playing this role
 	 * 
 	 * @since MaDKit 5.0.3
@@ -435,7 +429,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * Gets the names of the groups the agent is in
 	 * according to a community
 	 * 
-	 * @param community
+	 * @param community the community
 	 * @return a set containing the groups the agent is in, or <code>null</code> if this
 	 * community does not exist. This set could be empty.
 	 */
@@ -463,7 +457,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * Gets the names of the roles that the agent has in
 	 * a specific group
 	 * 
-	 * @param _group
+	 * @param _group the group
 	 * @return a sorted set containing the names of the roles
 	 * the agent has in a group, or <code>null</code> if the
 	 * community or the group does not exist. This set could be empty.
@@ -471,7 +465,6 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	@Override public TreeSet<String> getMyMKGERoles(Group _group){
 		return super.getMyRoles(_group.getCommunity(), _group.getPath());
 	}
-	
     
     @SuppressWarnings("unused")
     private ArrayList<GroupRole> getGroupRoles()
@@ -862,7 +855,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * that itself.
 	 * <p>
 	 * Here is a typical example:
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * <tt>@Override</tt>
@@ -1094,7 +1087,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * @param _role
 	 *           the name of the role
 	 * @return <code>true</code> If a role with this name exists in this
-	 *         <community;group> couple, <code>false</code> otherwise.
+	 *         (community;group) couple, <code>false</code> otherwise.
 	 * @throws IllegalArgumentException when the given group represents also its subgroups        
 	 * @see Group
 	 * @since MadKitGroupExtension 1.0
@@ -1579,7 +1572,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 *         </ul>
 	 * @since MadKit 5.0
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
-	 * @see #killAgent(AbstractAgent, int)
+	 * @see #killAgent(madkit.kernel.AbstractAgent, int)
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
 	 */
@@ -1648,7 +1641,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 *         crashed during its <code>activate</code> method</li>
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
-	 * @see AbstractAgent#launchAgent(AbstractAgent)
+	 * @see AbstractAgent#launchAgent(madkit.kernel.AbstractAgent)
 	 * @since MadKit 5.0
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
@@ -1682,7 +1675,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 *         crashed during its <code>activate</code> method</li>
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
-	 * @see AbstractAgent#launchAgent(AbstractAgent)
+	 * @see AbstractAgent#launchAgent(madkit.kernel.AbstractAgent)
 	 * @since MadKit 5.0
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
@@ -1878,14 +1871,14 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * Launches a new agent using its full class name and returns when the
 	 * launched agent has completed its {@link AbstractAgent#activate()} method
 	 * or when the time out is elapsed. This has the same effect as
-	 * {@link #launchAgent(AbstractAgent, int, boolean)} but allows to launch
+	 * {@link #launchAgent(madkit.kernel.AbstractAgent, int, boolean)} but allows to launch
 	 * agent using a class name found reflexively for instance. Additionally,
 	 * this method will launch the last compiled byte code of the corresponding
 	 * class if it has been reloaded using
 	 * {@link MadkitClassLoader#reloadClass(String)}. Finally, if the launch
 	 * timely succeeded, this method returns the instance of the created agent.
 	 * 
-	 * @param _agentClass
+	 * @param _agentClass the agent class name
 	 * @param _timeOutSeconds
 	 *           time to wait the end of the agent's activation until returning
 	 *           <code>null</code>
@@ -1943,7 +1936,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * array defines a complete CGR location. So for example,
 	 * <code>cgrLocations</code> could be defined and used with code such as :
 	 * 
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * launchAgentBucketWithRoles("madkitgroupextension.OneAgent", 1000000, new Role(new Group("community", "group"), "role"),new Role(new Group("anotherC", "anotherG"), "anotherR"))
@@ -2008,7 +2001,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * array defines a complete CGR location. So for example,
 	 * <code>cgrLocations</code> could be defined and used with code such as :
 	 * 
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * launchAgentBucketWithRoles("madkitgroupextension.OneAgent", 1000000, new Role(new Group("community", "group"), "role"),new Role(new Group("anotherC", "anotherG"), "anotherR"))
@@ -2205,12 +2198,13 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	}
     }
     
+	
 	/**
 	 * Launch agents by parsing an XML node. The method
 	 * immediately returns without waiting the end of the agents' activation, 
 	 * 
 	 * @param agentXmlNode the XML node
-	 * @return {@link ReturnCode#SEVERE} if the launch failed
+	 * @return {@link madkit.kernel.AbstractAgent.ReturnCode#SEVERE} if the launch failed
 	 * 
 	 * @see XMLUtilities
 	 */
@@ -2393,7 +2387,6 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 		}
 	}
     
-    
     /**
      * @throws IllegalAccessError when the function is called.
      * @since MadKitGroupExtension 1.3.1 
@@ -2435,7 +2428,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 *         role is already handled by this agent.</li>
 	 *         <li><code>{@link madkit.kernel.AbstractAgent.ReturnCode#ACCESS_DENIED}</code>: If the access
 	 *         denied by the manager of that secured group.</li>
-	 *         </li>
+	 *         
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
 	 * @see Gatekeeper
@@ -2443,9 +2436,9 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 * @since MaDKit 5.0
 	 * @since MadKitGroupExtension 1.3.1
 	 */
-@Override public ReturnCode bucketModeRequestRole(Group _group, final String role) {
+    @Override public ReturnCode bucketModeRequestRole(Group _group, final String role) {
 	return bucketModeRequestRole(_group, role, null);
-}
+    }
 	/**
 	 * Requests a role even if the agent has been launched 
 	 * using one of the <code>launchAgentBucket</code> methods with non <code>null</code>
@@ -2477,7 +2470,7 @@ public class Watcher extends madkit.kernel.Watcher implements MKGEWatcher
 	 *         role is already handled by this agent.</li>
 	 *         <li><code>{@link madkit.kernel.AbstractAgent.ReturnCode#ACCESS_DENIED}</code>: If the access
 	 *         denied by the manager of that secured group.</li>
-	 *         </li>
+	 *         
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
 	 * @see Gatekeeper

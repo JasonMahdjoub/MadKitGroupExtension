@@ -105,6 +105,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	
 	/**
 	 * Returns <code>true</code> if the agent has been launched and is not ended nor killed.
+	 * @return <code>true</code> if the agent has been launched and is not ended nor killed.
 	 * 
 	 */
     public boolean isAlive();
@@ -181,8 +182,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * Sends a message to an agent using an agent address. This has the same
 	 * effect as <code>sendMessageWithRole(receiver, messageToSend, null)</code>.
 	 * 
-	 * @param receiver
-	 * @param messageToSend
+	 * @param receiver the receiver agent
+	 * @param messageToSend the message to send
 	 * @return <ul>
 	 *         <li><code>{@link ReturnCode#SUCCESS}</code>: If the send has
 	 *         succeeded.</li>
@@ -207,6 +208,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *           the targeted agent
 	 * @param message
 	 *           the message to send
+	 * @param senderRole the sender role 
+	 *  
 	 * @return <ul>
 	 *         <li><code>{@link ReturnCode#SUCCESS}</code>: If the send has
 	 *         succeeded.</li>
@@ -290,7 +293,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * discuss with its linked agent: This allows to enqueue work to do in their
 	 * life cycle
 	 * 
-	 * @param m
+	 * @param m the received message
 	 */
     public void receiveMessage(final Message m);
     
@@ -312,6 +315,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * 
 	 * @param key
 	 *           the name of the MadKit property
+	 * @param value
+	 * 	     the value of MadKit property
 	 * @see #getMadkitProperty(String)
 	 * @see Madkit
 	 */
@@ -384,11 +389,11 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         been launched yet. This especially means that most of the methods
 	 *         of this API still do not work for this agent as it has not been
 	 *         registered yet.</li>
-	 *         <br/>
+	 *         
 	 *         <li><code>{@link State#INITIALIZING}</code>: the agent is being
 	 *         registered by the kernel but has not started its
 	 *         {@link AbstractAgent#activate()} method yet.</li>
-	 *         <br/>
+	 *         
 	 *         <li><code>{@link State#ACTIVATED}</code>: the agent is processing
 	 *         its {@link AbstractAgent#activate()} method. This state is also the "running"
 	 *         state of {@link AbstractAgent} subclasses (i.e. when they have
@@ -396,13 +401,13 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         {@link Agent#live()} managed by the kernel in their life cycle. On
 	 *         the contrary to {@link Agent} subclasses which next state is
 	 *         {@link State#LIVING}.</li>
-	 *         <br/>
+	 *         
 	 *         <li><code>{@link State#LIVING}</code>: returned when {@link Agent}
 	 *         subclasses are processing their {@link Agent#live()} method.</li>
-	 *         <br/>
+	 *         
 	 *         <li><code>{@link State#ENDING}</code>: the agent is processing its
 	 *         {@link AbstractAgent#end()} method.</li>
-	 *         <br/>
+	 *         
 	 *         <li><code>{@link State#TERMINATED}</code>: the agent has finished
 	 *         its life in the MaDKit platform. Especially, most of the methods
 	 *         of this API will no longer work for this agent.</li>
@@ -416,6 +421,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * agent will trigger its corresponding behavior using the parameters of the
 	 * message.
 	 * 
+	 * @param <E> the type
 	 * @param message
 	 *           the message to proceed
 	 * @since MaDKit 5.0.0.14
@@ -454,7 +460,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * </tr>
 	 * <tr>
 	 * <td><code>build.id</code></td>
-	 * <td>MadKit kernel build ID</td></tr
+	 * <td>MadKit kernel build ID</td>
+	 * </tr>
 	 * <tr>
 	 * <td><code>madkit.repository.url</code></td>
 	 * <td>the agent repository for this version, usually http://www.madkit.net/repository/MadKit-${madkit.version}/ </td>
@@ -469,7 +476,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * </tr>
 	 * <tr>
 	 * <td><code>createLogFiles</code></td>
-	 * <td>true</code> or <code>false</code>: Create log files automatically for the new agents</td>
+	 * <td><code>true</code> or <code>false</code>: Create log files automatically for the new agents</td>
 	 * </tr>
 	 * <tr>
 	 * <td><code>logDirectory</code></td>
@@ -672,7 +679,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * @param _role
 	 *           the name of the role
 	 * @return <code>true</code> If a role with this name exists in this
-	 *         <community;group> couple, <code>false</code> otherwise.
+	 *         (community;group) couple, <code>false</code> otherwise.
 	 * @throws IllegalArgumentException when the given group represents also its subgroups        
 	 * @see Group
 	 * @since MadKitGroupExtension 1.0
@@ -783,6 +790,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *           the group and the community name
 	 * @param _role
 	 *           the desired role.
+	 * @return a ReturnCode
 	 * @see #requestRole(Group, String, Object)
 	 * @since MadKit 5.0
 	 * 
@@ -892,6 +900,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * <code>killAgent(target,Integer.MAX_VALUE)</code> so that the targeted
 	 * agent has a lot of time to complete its {@link AbstractAgent#end()} method.
 	 * 
+	 * @param _target the agent to kill
 	 * @return <ul>
 	 *         <li><code>{@link ReturnCode#SUCCESS}</code>: If the target's end
 	 *         method has completed normally.</li>
@@ -904,7 +913,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         This unlikely happens ;).</li>
 	 *         </ul>
 	 * @since MadKit 5.0
-	 * @see #killAgent(AbstractAgent, int)
+	 * @see #killAgent(madkit.kernel.AbstractAgent, int)
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
 	 */
@@ -926,6 +935,9 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * of time. Using 0 as timeout will stop the target as soon as possible,
 	 * eventually brutally stop the its life cycle. In such a case, if its end
 	 * method has not been started, it will never run.
+	 * 
+	 * @param _target the agent to kill
+	 * @param _timeOutSeconds the time before stopping the killing process
 	 * 
 	 * @return <ul>
 	 *         <li><code>{@link ReturnCode#SUCCESS}</code>: If the target's end
@@ -960,7 +972,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         <li><code> {@link ReturnCode#AGENT_CRASH} </code>: If the agent
 	 *         crashed during its <code>activate</code> method</li>
 	 *         </ul>
-	 * @see AbstractAgent#launchAgent(AbstractAgent)
+	 * @see AbstractAgent#launchAgent(madkit.kernel.AbstractAgent)
 	 * @since MadKit 5.0
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
@@ -989,7 +1001,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         <li><code> {@link ReturnCode#AGENT_CRASH} </code>: If the agent
 	 *         crashed during its <code>activate</code> method</li>
 	 *         </ul>
-	 * @see AbstractAgent#launchAgent(AbstractAgent)
+	 * @see AbstractAgent#launchAgent(madkit.kernel.AbstractAgent)
 	 * @since MadKit 5.0
 	 * @throws IllegalArgumentException When the given agent as parameter don't implement the interface MadKitGroupExtensionAgent
 	 * @since MadKitGroupExtension 1.0
@@ -1128,15 +1140,15 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * Launches a new agent using its full class name and returns when the
 	 * launched agent has completed its {@link AbstractAgent#activate()} method
 	 * or when the time out is elapsed. This has the same effect as
-	 * {@link #launchAgent(AbstractAgent, int, boolean)} but allows to launch
+	 * {@link #launchAgent(madkit.kernel.AbstractAgent, int, boolean)} but allows to launch
 	 * agent using a class name found reflexively for instance. Additionally,
 	 * this method will launch the last compiled byte code of the corresponding
 	 * class if it has been reloaded using
 	 * {@link MadkitClassLoader#reloadClass(String)}. Finally, if the launch
 	 * timely succeeded, this method returns the instance of the created agent.
 	 * 
-	 * @param _agentClass
-	 * @param _timeOutSeconds
+	 * @param _agentClass the agent class name
+	 * @param _timeOutSeconds 
 	 *           time to wait the end of the agent's activation until returning
 	 *           <code>null</code>
 	 * @param _createFrame
@@ -1160,7 +1172,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * array defines a complete CGR location. So for example,
 	 * <code>cgrLocations</code> could be defined and used with code such as :
 	 * 
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * launchAgentBucketWithRoles("madkitgroupextension.OneAgent", 1000000, new Role(new Group("community", "group"), "role"),new Role(new Group("anotherC", "anotherG"), "anotherR"))
@@ -1209,7 +1221,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * array defines a complete CGR location. So for example,
 	 * <code>cgrLocations</code> could be defined and used with code such as :
 	 * 
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * launchAgentBucketWithRoles("madkitgroupextension.OneAgent", 1000000, new Role(new Group("community", "group"), "role"),new Role(new Group("anotherC", "anotherG"), "anotherR"))
@@ -1302,7 +1314,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         role is already handled by this agent.</li>
 	 *         <li><code>{@link madkit.kernel.AbstractAgent.ReturnCode#ACCESS_DENIED}</code>: If the access
 	 *         denied by the manager of that secured group.</li>
-	 *         </li>
+	 *         
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
 	 * @see Gatekeeper
@@ -1343,7 +1355,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 *         role is already handled by this agent.</li>
 	 *         <li><code>{@link madkit.kernel.AbstractAgent.ReturnCode#ACCESS_DENIED}</code>: If the access
 	 *         denied by the manager of that secured group.</li>
-	 *         </li>
+	 *         
 	 *         </ul>
 	 * @see madkit.kernel.AbstractAgent.ReturnCode
 	 * @see Gatekeeper
@@ -1428,7 +1440,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
     
     /**
      * Remove role from automatically requested roles.
-     * @param role
+     * @param role the role name
      * @see #autoRequestRole(AbstractGroup, String, Object)
      */
     public void removeAutoRequestedRole(String role);
@@ -1456,8 +1468,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * 
 	 * Tells if the agent is currently playing a specific role.
 	 * 
-	 * @param _group
-	 * @param role
+	 * @param _group the group
+	 * @param role the role name
 	 * @return <code>true</code> if the agent is playing this role
 	 * 
 	 * @since MaDKit 5.0.3
@@ -1469,7 +1481,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * Gets the names of the groups the agent is in
 	 * according to a community
 	 * 
-	 * @param community
+	 * @param community the community
 	 * @return a set containing the groups the agent is in, or <code>null</code> if this
 	 * community does not exist. This set could be empty.
 	 */
@@ -1482,6 +1494,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * as it is the case for MaDKit's, so this is a convenient method 
 	 * for retrieving the value of an option.
 	 * 
+	 * @param <E> the type
 	 * @param option the constant representing a MaDKit option
 	 * 
 	 * @return the corresponding value as a String, or <code>null</code> if
@@ -1499,7 +1512,9 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * Set the MaDKit session property indicated by the specified 
 	 * constant representing a MaDKit option.
 	 * 
+	 * @param <E> the type
 	 * @param option the constant representing a MaDKit option
+	 * @param value the value to set
 	 * 
 	 * @see #getMadkitProperty(String)
 	 * @see Madkit
@@ -1510,6 +1525,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	/**
 	 * Shortcut for <code>Boolean.parseBoolean(getMadkitProperty(option))</code>
 	 * 
+	 * @param <E> the type
 	 * @param option the constant representing a runtime option
 	 * 
 	 * @return <code>true</code> if the option has been set to <code>true</code>
@@ -1522,7 +1538,7 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * Gets the names of the roles that the agent has in
 	 * a specific group
 	 * 
-	 * @param _group
+	 * @param _group the group
 	 * @return a sorted set containing the names of the roles
 	 * the agent has in a group, or <code>null</code> if the
 	 * community or the group does not exist. This set could be empty.
@@ -1534,9 +1550,9 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 * 
 	 * @param xmlFile the XML file to parse
 	 * @return {@link ReturnCode#SEVERE} if the launch failed
-	 * @throws ParserConfigurationException 
-	 * @throws IOException 
-	 * @throws SAXException 
+	 * @throws ParserConfigurationException if an XML format error has been detected
+	 * @throws IOException if an IO exception occurs
+	 * @throws SAXException if an SAXException occurs
 	 */
 	public ReturnCode launchXmlAgents(String xmlFile) throws SAXException, IOException, ParserConfigurationException;
 	
@@ -1554,6 +1570,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	/**
 	 * Retrieves and removes the first message of the
 	 * mailbox that matches the filter.
+	 * 
+	 * @param filter the filter 
 	 * 
 	 * @return The next acceptable message or <code>null</code> if no such message has been found.
 	 * @since MadKitGroupExtension 1.4.0
@@ -1573,6 +1591,8 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	/**
 	 * Checks if this agent address is still valid. I.e. the corresponding agent is 
 	 * still playing this role. 
+	 * 
+	 * @param agentAddress the agent address
 	 * 
 	 * @return <code>true</code> if the address still exists in the organization.
 	 * @since MaDKit 5.0.4

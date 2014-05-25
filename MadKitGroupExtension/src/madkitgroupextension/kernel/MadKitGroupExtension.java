@@ -47,33 +47,33 @@ import madkitgroupextension.version.Version;
  * Some modifications are done considering the specificities of MadKitGroupExtension.
  *      
  * MadKit 5 booter class. 
- * <p>
+ * 
  * <h2>MadKit v.5 new features</h2>
- * <p>
+ * 
  * <ul>
  * <li>One big change that comes with version 5 is how agents
  * are identified and localized within the artificial society.
  * An agent is no longer binded to a single agent address but 
  * has as many agent addresses as holden positions in the artificial society.
  * see {@link AgentAddress} for more information.</li>
- * <br>
+ * 
  * <li>With respect to the previous change, a <code><i>withRole</i></code> version
  * of all the messaging methods has been added. 
  * See {@link AbstractAgent#sendMessageWithRole(AgentAddress, Message, String)} for an example
  * of such a method.</li>
- * <br><li>A replying mechanism has been introduced through 
+ * <li>A replying mechanism has been introduced through 
  * <code><i>SendReply</i></code> methods. 
  * It enables the agent with the possibility of replying directly to a given message.
  * Also, it is now possible to get the reply to a message, or to wait for a reply 
  * ( for {@link Agent} subclasses only as they are threaded)
  * See {@link AbstractAgent#sendReply(Message, Message)}
  * for more details.</li>
- * <br><li>Agents now have a <i>formal</i> state during a MadKit session.
+ * <li>Agents now have a <i>formal</i> state during a MadKit session.
  * See the {@link AbstractAgent#getState()} method for detailed information.</li>
- * <br><li>One of the most convenient improvement of v.5 is the logging mechanism which is provided.
+ * <li>One of the most convenient improvement of v.5 is the logging mechanism which is provided.
  * See the {@link AbstractAgent#logger} attribute for more details.</li>
- * <br><li>Internationalization is being made (fr_fr and en_us for now).</li>
- * <p>
+ * <li>Internationalization is being made (fr_fr and en_us for now).</li>
+ * </ul>
  * @author Fabien Michel
  * @author Jacques Ferber
  * @author Jason Mahdjoub
@@ -108,13 +108,13 @@ public class MadKitGroupExtension
 	 * <p>
 	 * For instance, assuming that your classpath is already set correctly:
 	 * <p>
-	 * <tt>>java madkit.kernel.Madkit agentLogLevel INFO --launchAgents
+	 * <tt>java madkit.kernel.Madkit agentLogLevel INFO --launchAgents
 	 * madkit.marketorg.Client,20,true;madkit.marketorg.Broker,10,true;madkit.marketorg.Provider,20,true;</tt>
 	 * <p>
 	 * (2) It can be used programmatically anywhere, especially within main method of agent classes to ease their launch within an IDE.
 	 * <p>
 	 * Here is an example of how it can be used in this way:
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * 
@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 2, 25);
-	VERSION=new Version("MadKitGroupExtension", 1,5,0, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2014, 5, 25);
+	VERSION=new Version("MadKitGroupExtension", 1,5,2, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -218,8 +218,31 @@ public class MadKitGroupExtension
 	VERSION.addDeveloper(new PersonDeveloper("mahdjoub", "jason", c.getTime()));
 	
 	c=Calendar.getInstance();
+	c.set(2014, 5, 25);
+	Description d=new Description(1,5,2,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Updating to MadKit 5.0.5");
+	d.addItem("AbstractAgent classes are not serializable");
+	d.addItem("Compiling with Java 8.");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
+	c.set(2014, 3, 7);
+	d=new Description(1,5,1,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adding AbstractGroup.isEmpty()");
+	d.addItem("Correcting a loop problem on the class Group");
+	d.addItem("Now it is possible to create an empty MultiGroup. This correct a bug for set functions.");
+	d.addItem("Removing duplicated groups into the function MultiGroup.getRepresentedGroups(KernelAddress).");
+	d.addItem("Adding function AbstractGroup.getUniverse().");
+	d.addItem("Adding function AbstractGroup.getComplementary().");
+	d.addItem("Adding function AbstractGroup.getComplementary(KernelAddress).");
+	d.addItem("Adding function AbstractGroup.includes(AbstractGroup).");
+	d.addItem("Altering function MultiGroup.equals(AbstractGroup).");
+	d.addItem("Adding function Group.getThisGroupWithoutItsSubGroups().");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2014, 2, 25);
-	Description d=new Description(1,5,0,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,5,0,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Adding function AbstractGroup.intersect(KernelAddress, AbstractGroup)");
 	d.addItem("Adding function AbstractGroup.intersect(AbstractGroup)");
 	d.addItem("Adding function AbstractGroup.union(KernelAddress, AbstractGroup)");

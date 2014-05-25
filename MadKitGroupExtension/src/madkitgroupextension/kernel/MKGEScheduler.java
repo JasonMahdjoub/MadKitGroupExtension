@@ -86,7 +86,7 @@ public interface MKGEScheduler extends MKGEAgent
 	 * 	if (logger != null) {
 	 * 		logger.finer("Doing simulation step "+GVT);
 	 * 	}
-	 * 	for (final Activator<?> activator : m_activators) {
+	 * 	for (final Activator&#139;?&#155; activator : m_activators) {
 	 * 		triggerActivator(activator);
 	 * 	}
 	 * 	setGVT(getGVT() + 1);

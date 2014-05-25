@@ -43,6 +43,7 @@ public interface MKGESwingViewer extends MKGEWatcher
     
 	/**
 	 * Enable or disable the rendering activity
+	 * @param activate rendering activation
 	 */
 	public void setRendering(boolean activate);
 	

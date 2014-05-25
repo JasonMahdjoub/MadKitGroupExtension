@@ -113,7 +113,11 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
     
     
     /**
+     * 
      * this method is reserved to internal processes of MadKitGroupExtension.
+     * 
+     * @param args args
+     * @return activator
      */
     protected madkit.kernel.Activator<A> getPersonalActivatorInstance(Object ... args)
     {
@@ -225,7 +229,7 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 	 * So, one has to take care about how the activator's fields are used
 	 * here to avoid a {@link ConcurrentModificationException} for instance.
 	 * 
-	 * @param _agentsList
+	 * @param _agentsList the agents list to execute
 	 * @param args arguments that could be used by the scheduler 
 	 * to pass information to this activator for an activation
 	 * @since 1.1
@@ -234,7 +238,7 @@ public abstract class Activator<A extends madkit.kernel.AbstractAgent & MKGEAbst
 
     /**
 	 * @return <code>true</code> if the multi core mode is on. I.e. 
-	 * {@link #nbOfParallelTasks()} > 1.
+	 * {@link #nbOfParallelTasks()} is greater than 1.
 	 * This method could be used by the default behavior of scheduler agents as 
 	 * they test in which mode each activator has to be used.
 	 * @since MadKitGroupExtension 1.0

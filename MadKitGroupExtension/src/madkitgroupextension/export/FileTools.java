@@ -69,7 +69,7 @@ public final class FileTools {
 	 * 
 	 * @param src Source file path.
 	 * @param dst Destination file path.
-	 * @throws IOException 
+	 * @throws IOException when an IO exception occurs
 	 */
 	public static void move(String src, String dst) throws IOException {
 		File source = new File(src);
@@ -87,7 +87,7 @@ public final class FileTools {
 	 * 
 	 * @param src Source file path.
 	 * @param dst Destination file path.
-	 * @throws IOException 
+	 * @throws IOException  when an IO exception occurs
 	 */
 	public static void copy(String src, String dst) throws IOException {
 		File source = new File(src);
@@ -116,7 +116,7 @@ public final class FileTools {
 	 * @param relatedPath Used for the recursive called.
 	 * @param sourceFolder Source directory.
 	 * @param destinationFolder Destination directory.
-	 * @throws Exception 
+	 * @throws Exception when an exception occurs 
 	 */
 	public static void copyFolderToFolder(String currentFolder,
 			String relatedPath, String sourceFolder, String destinationFolder) throws Exception {
@@ -166,7 +166,7 @@ public final class FileTools {
 	 * 
 	 * @param files A vector of file paths.
 	 * @param projectDirectory The project Directory.
-	 * @throws Exception 
+	 * @throws Exception when an exception occurs
 	 */
 	public static void removeFiles(Vector<String> files,
 			String projectDirectory) throws Exception {
@@ -181,7 +181,7 @@ public final class FileTools {
 	 * 
 	 * @param file A file path.
 	 * @param rootDirectory A root directory.
-	 * @throws Exception 
+	 * @throws Exception when an exception occurs 
 	 */
 	public static void removeFile(String file, String rootDirectory) throws Exception {
 		// Remove a file on the local machine

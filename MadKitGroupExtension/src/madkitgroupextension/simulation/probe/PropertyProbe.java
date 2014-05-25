@@ -186,8 +186,8 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	/**
 	 * Should be used to work with primitive types
 	 * or fields which are initially <code>null</code>
-	 * @param theAgent
-	 * @param value
+	 * @param theAgent the agent
+	 * @param value the value to set
 	 */
     public void setPropertyValue(A theAgent,  P value)
     {

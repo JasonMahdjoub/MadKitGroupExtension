@@ -83,7 +83,7 @@ public class GenericBehaviorActivator<A extends madkit.kernel.AbstractAgent & MK
 	 * So, one has to take care about how the activator's fields are used
 	 * here to avoid a {@link ConcurrentModificationException} for instance.
 	 * 
-	 * @param _agentsList
+	 * @param _agentsList the agent list to execute
 	 * @param args arguments that could be used by the scheduler 
 	 * to pass information to this activator for an activation
 	 * @since 1.1

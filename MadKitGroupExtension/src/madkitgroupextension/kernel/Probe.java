@@ -66,7 +66,7 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 	 * artificial society. Once created, it has to be added by a {@link Watcher} 
 	 * agent using the {@link Watcher#addProbe(Probe)} method.
 	 * @param _group Activator.java
-	 * @param _role
+	 * @param _role the role name
 	 * @see Watcher
 	 * @see AbstractGroup
 	 * @see Group

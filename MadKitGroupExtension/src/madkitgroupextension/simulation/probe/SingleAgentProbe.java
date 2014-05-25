@@ -140,7 +140,7 @@ public class SingleAgentProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstra
 	/**
 	 * Should be used to work with primitive types
 	 * or fields which are initially <code>null</code>
-	 * @param value
+	 * @param value the value to set
 	 */
 public void setPropertyValue(T value)
 {

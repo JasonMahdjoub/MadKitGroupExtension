@@ -164,6 +164,7 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 * 
 	 * @param messageToReplyTo the original message previously received
 	 * @param reply the new message
+	 * @param timeOutMilliSeconds time before the operation is avoided
 	 * @return the reply received as soon as available
 	 * @see #sendReplyWithRoleAndWaitForReply(Message, Message, String, Integer)
 	 * @since MaDKit 5
@@ -176,6 +177,7 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 * This has the same effect as <code>sendReplyWithRoleAndWaitForReply(messageToReplyTo, reply, senderRole, null)</code>.
 	 * @param messageToReplyTo the original message previously received
 	 * @param reply the new message
+	 * @param senderRole the sender role
 	 * @return the reply received as soon as available
 	 * @see #sendReplyWithRoleAndWaitForReply(Message, Message, String, Integer)
 	 * @since MaDKit 5
@@ -234,8 +236,8 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 *           the role name
 	 * @param _message
 	 * 	     the message
-	 * @param _senderRole
-	 * @param _timeOutMilliSeconds
+	 * @param _senderRole the sender role
+	 * @param _timeOutMilliSeconds the time to wait before avoiding this operation
 	 * @return a list of messages which are answers to the <code>message</code> which has been broadcasted.
 	 * @throws IllegalArgumentException when the given group represents also its subgroups
 	 * @see Group
@@ -363,7 +365,7 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 * with the filter, waiting for ever if necessary
 	 * until a matching message becomes available.
 	 * 
-	 * @param filter
+	 * @param filter the message filter
 	 * 
 	 * @return 	the first received message that matches the filter
 	 * @since MadKitGroupExtension 1.4.0
@@ -375,7 +377,7 @@ public interface MKGEAgent extends MKGEAbstractAgent
 	 * for a new incoming acceptable message up to a certain delay.
 	 * 
 	 * @param timeOutMilliseconds the maximum time to wait, in milliseconds.
-	 * @param filter
+	 * @param filter the message filter
 	 * 
 	 * @return a message that matches or <code>null</code> otherwise.
 	 * @since MadKitGroupExtension 1.4.0

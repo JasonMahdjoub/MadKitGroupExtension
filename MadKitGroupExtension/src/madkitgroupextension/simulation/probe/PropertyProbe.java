@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import madkit.simulation.SimulationException;
 import madkitgroupextension.kernel.AbstractGroup;
 import madkitgroupextension.kernel.Group;
 import madkitgroupextension.kernel.GroupChangementNotifier;
@@ -421,6 +422,25 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	//m_is_agent_properties_changed=_is_changed;
 	//m_is_properties_changed=_is_changed;
     }
+    
+	/**
+	 * Returns the average value for the property over all the agents. The property
+	 * must be numerical for this to work.
+	 * 
+	 * @return the average value for this property
+	 */
+	public double getAverageValue() {
+		double total = 0;
+		for (final A a : getCurrentAgentsList()) {
+			try {
+				total += ((Number) getPropertyValue(a)).doubleValue();
+			} catch (ClassCastException e) {
+				throw new SimulationException(toString() + " on " + a, e);
+			}
+		}
+		return total / size();
+	}
+    
 
     private class PersonalPropertyProbe extends madkit.simulation.probe.PropertyProbe<A, P>
     {
@@ -466,6 +486,8 @@ public class PropertyProbe<A extends madkit.kernel.AbstractAgent & MKGEAbstractA
 	}
 	
     }
+    
+    
 
     
     private static Method m_add_madkit_probe_method=null;

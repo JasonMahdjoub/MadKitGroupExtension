@@ -189,8 +189,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2014, 5, 25);
-	VERSION=new Version("MadKitGroupExtension", 1,5,2, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2015, 4, 19);
+	VERSION=new Version("MadKitGroupExtension", 1,6,1, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -218,8 +218,25 @@ public class MadKitGroupExtension
 	VERSION.addDeveloper(new PersonDeveloper("mahdjoub", "jason", c.getTime()));
 	
 	c=Calendar.getInstance();
+	c.set(2015, 4, 19);
+	Description d=new Description(1,6,1,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Updating madkit to 5.0.5.2");
+	d.addItem("Adding madkitgroupextension.simulation.probe.PropertyProbe.getAverageValue()");
+	VERSION.addDescription(d);
+
+	
+	c=Calendar.getInstance();
+	c.set(2014, 9, 16);
+	d=new Description(1,6,0,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Altering function Group.getSubGroup(boolean, String...)");
+	d.addItem("Altering function Group.getSubGroup(String...)");
+	d.addItem("Adding function Group.getSubGroup(boolean, Group)");
+	d.addItem("Adding function Group.getSubGroup(Group)");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2014, 5, 25);
-	Description d=new Description(1,5,2,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,5,2,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Updating to MadKit 5.0.5");
 	d.addItem("AbstractAgent classes are not serializable");
 	d.addItem("Compiling with Java 8.");

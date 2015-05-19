@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import madkit.simulation.SimulationException;
 import madkitgroupextension.simulation.probe.PropertyProbe;
 
 /**
@@ -504,7 +505,6 @@ public class Probe<A extends madkit.kernel.AbstractAgent & MKGEAbstractAgent> im
 
 	
     }
-    
     
     private class PersonalProbe extends madkit.kernel.Probe<A>
     {

@@ -435,6 +435,14 @@ public final class Group extends AbstractGroup
      * </pre>
      * On this example, the group <code>subgroup</code> is the same group than <code>aba</code>
      * 
+     * Through the function {@link #getPath()}, you can observe the used String path (containing '/' characters) into MadKit for this group. 
+     * To convert a String path to a Group class, use this function as follows :
+     * 
+     * <pre>
+     * String MySubPath="/My subgroup 1/My subgroup 2"
+     * Group g=this.getSubGroup(MySubPath);
+     * </pre>
+     * 
      * 
      * @param _groups the path of the desired subgroup
      * @return the subgroup
@@ -444,6 +452,57 @@ public final class Group extends AbstractGroup
     {
 	return this.getSubGroup(false, _groups);
     }
+    
+    /**
+     * Returns a subgroup contained on this group, or on one of its subgroups.
+     * This function is the same call than <code>getSubGroup(false, _group)</code>.
+     * 
+     * Here a simple example :
+     * <pre>
+     * 	Group a=new Group("My community", "A");
+     *  Group aa=new Group("My community", "A", "A");
+     *  Group ba=new Group("My community", "B", "A");
+     *  Group aaba=new Group("My community", "A", "A", "B", "A");
+     *  
+     *  Group subgroup=aa.getSubGroup(ba);
+     * </pre>
+     * On this example, the group <code>subgroup</code> is the same group than <code>aaba</code>
+     * 
+     * 
+     * @param _group the subgroup that must be contained into this group.
+     * @return the subgroup
+     * @since MadKitGroupExtension 1.6
+     */
+    public Group getSubGroup(Group _group)
+    {
+	return getSubGroup(false, _group);
+    }
+    
+    /**
+     * Returns a subgroup contained on this group, or on one of its subgroups.
+     * 
+     * Here a simple example :
+     * <pre>
+     * 	Group a=new Group("My community", "A");
+     *  Group aa=new Group("My community", "A", "A");
+     *  Group ba=new Group("My community", "B", "A");
+     *  Group aaba=new Group("My community", "A", "A", "B", "A");
+     *  
+     *  Group subgroup=aa.getSubGroup(ba);
+     * </pre>
+     * On this example, the group <code>subgroup</code> is the same group than <code>aaba</code>
+     * 
+     * 
+     * @param _isReserved tell if the group does not authorize other instances with the same group
+     * @param _group the subgroup that must be contained into this group.
+     * @return the subgroup
+     * @since MadKitGroupExtension 1.6
+     */
+    public Group getSubGroup(boolean _isReserved, Group _group)
+    {
+	return getSubGroup(_isReserved, _group.getPath());
+    }
+    
     /**
      * Returns a subgroup contained on this group, or on one of its subgroups.
      * 
@@ -457,6 +516,14 @@ public final class Group extends AbstractGroup
      *  Group subgroup=ab.getSubGroup("A");
      * </pre>
      * On this example, the group <code>subgroup</code> is the same group than <code>aba</code>
+     * 
+     * Through the function {@link #getPath()}, you can observe the used String path (containing '/' characters) into MadKit for this group. 
+     * To convert a String path to a Group class, use this function as follows :
+     * 
+     * <pre>
+     * String MySubPath="/My subgroup 1/My subgroup 2"
+     * Group g=this.getSubGroup(_isReserved, MySubPath);
+     * </pre>
      * 
      * 
      * @param _isReserved tell if the group does not authorize other instances with the same group
@@ -726,7 +793,7 @@ public final class Group extends AbstractGroup
 	    return "Group("+getCommunity()+":"+getPath()+")";
     }
     
-    private static String [] getGroupsStringFromPath(String _path)
+    static String [] getGroupsStringFromPath(String _path)
     {
 	String []r=_path.split("/");
 	if (r==null || r.length==0)
@@ -1016,6 +1083,8 @@ public final class Group extends AbstractGroup
 	{
 	    if (_group.length==0)
 		return this;
+	    if (_group.length==1 && _group[0].contains("/"))
+		    _group=getGroupsStringFromPath(_group[0]);
 
 	    return getGroup(_isDistributed, _theIdentifier, 0, _isReserved, _group);
 	}

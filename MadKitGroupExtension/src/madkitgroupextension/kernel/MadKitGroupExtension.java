@@ -222,6 +222,8 @@ public class MadKitGroupExtension
 	Description d=new Description(1,6,1,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Updating madkit to 5.0.5.2");
 	d.addItem("Adding madkitgroupextension.simulation.probe.PropertyProbe.getAverageValue()");
+	d.addItem("Adding madkitgroupextension.kernel.MKGEAbstractAgent.getLastReceivedMessage()");
+	d.addItem("Adding madkitgroupextension.kernel.MKGEAbstractAgent.getLastReceivedMessage(MessageFilter)");
 	VERSION.addDescription(d);
 
 	

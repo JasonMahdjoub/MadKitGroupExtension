@@ -22,6 +22,7 @@
 package madkitgroupextension.kernel;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -60,7 +61,7 @@ import madkit.util.XMLUtilities;
  * This documentation is copied/pasted and adapted from the MadKit documentation.
  * 
  * @author Jason Mahdjoub
- * @version 1.1
+ * @version 1.6.1
  * @since MadKitGroupExtension 1.0
  */
 public interface MKGEAbstractAgent extends GroupChangementNotifier
@@ -1600,4 +1601,23 @@ public interface MKGEAbstractAgent extends GroupChangementNotifier
 	 */
 	public boolean checkAgentAddress(final AgentAddress agentAddress);
 	
+
+	/**
+	 * Gets the last received message.
+	 * 
+	 * @return the last received message or <code>null</code>
+	 * if the mailbox is empty.
+	 */
+	public Message getLastReceivedMessage();
+
+	/**
+	 * Gets the last received message according to a filter.
+	 * 
+	 * @param filter the message filter to use
+	 * 
+	 * @return the last received message that matches the filter 
+	 * or <code>null</code> if such message has not been found.
+	 */
+	public Message getLastReceivedMessage(final MessageFilter filter);
+
 }

@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import madkit.action.KernelAction;
 import madkit.kernel.AbstractAgent;
 import madkit.kernel.Agent;
 import madkit.kernel.AgentAddress;
@@ -85,7 +86,114 @@ import madkitgroupextension.version.Version;
 public class MadKitGroupExtension
 {
     
+    private final Madkit madkit_platform;
+    
 	/**
+	 * Launch a new kernel with predefined options.
+	 * The call returns when the new kernel has finished to take
+	 * care of all options. Moreover the kernel automatically ends when all
+	 * the agents living on this kernel are done.
+	 * <p>
+	 * 
+	 * Here is an example of use:
+	 * <p>
+	 * 
+	 * <pre>
+	 * 
+	 * public void somewhereInYourCode() {
+	 * 	new MadkitGroupExtension(Option.launchAgents.toString(),// gets the --launchAgents string
+	 * 			Client.class.getName() + &quot;,true,20;&quot; + Broker.class.getName() + &quot;,true,10;&quot; + Provider.class.getName() + &quot;,false,20&quot;);
+	 * }
+	 * </pre>
+	 * @param options the options which should be used to launch MadkitGroupExtension.
+	 *           If <code>null</code>, the dektop mode is automatically used.
+	 * 
+	 * @see Option
+	 * @see BooleanOption
+	 * @see LevelOption
+	 */
+    public MadKitGroupExtension(String options[])
+    {
+	String v=VERSION.toStringShort();
+	int decal=(39-v.length())/2;
+	StringBuffer version=new StringBuffer();
+	for (int i=0;i<decal;i++)
+	    version.append(" ");
+	version.append(v);
+	SimpleDateFormat sdf=new SimpleDateFormat("yyyy");
+	System.out.println("\t---------------------------------------\n" +
+			   "\t         MadKitGroupExtension" +
+			   "\n\n" +
+			   "\t"+version.toString()+
+			   "\n\n" +
+			   "\t  MadKitGroupExtension Team " +sdf.format(VERSION.getProjectStartDate())+"-"+sdf.format(VERSION.getProjectEndDate()) +"\n" +
+			   "\n" +
+			   "\t---------------------------------------\n");
+	for (int i=0;i<options.length;i++)
+	{
+	    if (options[i].equals("--launchAgents"))
+	    {
+		for (++i;i<options.length;i++)
+		{
+		    if (options[i].startsWith("--"))
+		    {
+			--i;
+			break;
+		    }
+		    else
+		    {
+			try
+			{
+			    Class<?> c=Class.forName(options[i]);
+			    
+			    if (!MKGEAbstractAgent.class.isAssignableFrom(c))
+			    {
+				throw new IllegalArgumentException("The class to load "+options[i]+" given as parameter must be an agent which inherits from a MadKitGroupExtension class agent (and not from a MadKit class agent) !");
+			    }
+			}
+			catch (ClassNotFoundException e)
+			{
+			}
+			
+		    }
+		}
+	    }
+	}
+	madkit_platform=new Madkit(options);
+    }
+    	
+	/**
+	 * Makes the kernel do the corresponding action. This is done
+	 * by sending a message directly to the kernel agent.
+	 * This should not be used intensively since it is better to control
+	 * the execution flow of the application using the agents running in the kernel.
+	 * Still it provides a way to launch and manage a kernel from any java application as
+	 * a third party service.
+	 * 
+	 * <pre>
+	 * public void somewhereInYourCode() {
+	 * 				...
+	 * 				MadkitGroupExtension m = new MadkitGroupExtension(args);
+	 * 				...
+	 * 				m.doAction(KernelAction.LAUNCH_NETWORK); //start the network
+	 * 				...
+	 * 				m.doAction(KernelAction.LAUNCH_AGENT, new Agent(), true); //launch a new agent with a GUI
+	 * 				...
+	 * }
+	 * </pre>
+	 * @param action the action to request
+	 * @param parameters the parameters of the request
+	 */
+	public void doAction(KernelAction action, Object... parameters) {
+	    madkit_platform.doAction(action, parameters);
+	}
+    
+	@Override public String toString()
+	{
+	    return madkit_platform.toString();
+	}
+	
+    /**
 	 * This main could be used to
 	 * launch a new kernel using predefined options.
 	 * The new kernel automatically ends when all
@@ -135,52 +243,7 @@ public class MadKitGroupExtension
 	 */
     public static void main(String options[])
     {
-	String v=VERSION.toStringShort();
-	int decal=(39-v.length())/2;
-	StringBuffer version=new StringBuffer();
-	for (int i=0;i<decal;i++)
-	    version.append(" ");
-	version.append(v);
-	SimpleDateFormat sdf=new SimpleDateFormat("yyyy");
-	System.out.println("\t---------------------------------------\n" +
-			   "\t         MadKitGroupExtension" +
-			   "\n\n" +
-			   "\t"+version.toString()+
-			   "\n\n" +
-			   "\t  MadKitGroupExtension Team " +sdf.format(VERSION.getProjectStartDate())+"-"+sdf.format(VERSION.getProjectEndDate()) +"\n" +
-			   "\n" +
-			   "\t---------------------------------------\n");
-	for (int i=0;i<options.length;i++)
-	{
-	    if (options[i].equals("--launchAgents"))
-	    {
-		for (++i;i<options.length;i++)
-		{
-		    if (options[i].startsWith("--"))
-		    {
-			--i;
-			break;
-		    }
-		    else
-		    {
-			try
-			{
-			    Class<?> c=Class.forName(options[i]);
-			    
-			    if (!MKGEAbstractAgent.class.isAssignableFrom(c))
-			    {
-				throw new IllegalArgumentException("The class to load "+options[i]+" given as parameter must be an agent which inherits from a MadKitGroupExtension class agent (and not from a MadKit class agent) !");
-			    }
-			}
-			catch (ClassNotFoundException e)
-			{
-			}
-			
-		    }
-		}
-	    }
-	}
-	Madkit.main(options);
+	new MadKitGroupExtension(options);
     }
     
     public static final Version VERSION;
@@ -189,8 +252,8 @@ public class MadKitGroupExtension
 	Calendar c=Calendar.getInstance();
 	c.set(2012, 5, 8);
 	Calendar c2=Calendar.getInstance();
-	c2.set(2015, 4, 19);
-	VERSION=new Version("MadKitGroupExtension", 1,6,1, Version.Type.Beta, 1, c.getTime(), c2.getTime());
+	c2.set(2015, 4, 21);
+	VERSION=new Version("MadKitGroupExtension", 1,6,2, Version.Type.Beta, 1, c.getTime(), c2.getTime());
 	
 	InputStream is=MadKitGroupExtension.class.getResourceAsStream("build.txt");
 	
@@ -218,8 +281,16 @@ public class MadKitGroupExtension
 	VERSION.addDeveloper(new PersonDeveloper("mahdjoub", "jason", c.getTime()));
 	
 	c=Calendar.getInstance();
+	c.set(2015, 4, 21);
+	Description d=new Description(1,6,2,Version.Type.Beta, 1, c.getTime());
+	d.addItem("Adding madkitgroupextension.kernel.MadKitGroupExtension.MadKitGroupExtension(String[])");
+	d.addItem("Adding madkitgroupextension.kernel.MadKitGroupExtension.doAction(KernelAction , Object... )");
+	d.addItem("Adding madkitgroupextension.kernel.MadKitGroupExtension.toString()");
+	VERSION.addDescription(d);
+
+	c=Calendar.getInstance();
 	c.set(2015, 4, 19);
-	Description d=new Description(1,6,1,Version.Type.Beta, 1, c.getTime());
+	d=new Description(1,6,1,Version.Type.Beta, 1, c.getTime());
 	d.addItem("Updating madkit to 5.0.5.2");
 	d.addItem("Adding madkitgroupextension.simulation.probe.PropertyProbe.getAverageValue()");
 	d.addItem("Adding madkitgroupextension.kernel.MKGEAbstractAgent.getLastReceivedMessage()");

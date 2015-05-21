@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import madkit.simulation.SimulationException;
 import madkitgroupextension.simulation.probe.PropertyProbe;
 
 /**

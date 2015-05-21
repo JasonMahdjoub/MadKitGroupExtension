@@ -96,7 +96,7 @@ public class MadKitGroupExtension
 	 * <p>
 	 * 
 	 * Here is an example of use:
-	 * <p>
+	 * 
 	 * 
 	 * <pre>
 	 * 
